@@ -1,0 +1,51 @@
+# =======================================
+# 기본 설정: 모든 텍스트 파일은 LF로 강제
+# =======================================
+* text=auto eol=lf
+
+# ---------------------------------------
+# OS/툴별 특수 파일들 (예외 처리)
+# ---------------------------------------
+
+# Windows 배치 파일은 CRLF 필수
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 파워쉘 스크립트는 CRLF 권장
+*.ps1 text eol=crlf
+
+# ---------------------------------------
+# 언어별 세부 강제 설정 (LF 통일)
+# ---------------------------------------
+
+# 파이썬 / JS / TS / JSON / YAML 등은 LF
+*.py   text eol=lf
+*.js   text eol=lf
+*.jsx  text eol=lf
+*.ts   text eol=lf
+*.tsx  text eol=lf
+*.json text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+
+# Docker / 셸 스크립트도 LF
+Dockerfile text eol=lf
+*.sh       text eol=lf
+
+# ---------------------------------------
+# 바이너리 파일들은 변환 금지
+# ---------------------------------------
+*.jpg  binary
+*.jpeg binary
+*.png  binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.zip  binary
+*.gz   binary
+*.tar  binary
+*.7z   binary
+*.exe  binary
+*.dll  binary
+*.so   binary
+*.dylib binary
