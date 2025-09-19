@@ -7,10 +7,10 @@ FastAPI 백엔드와 React 프론트엔드로 구성된 **자연어 기반 데�
 
 ### 📋 시스템 요구사항
 
-- **Python 3.8+**
-- **Node.js 16+**
-- **MongoDB** (로컬 또는 클라우드)
-- **Git**
+-   **Python 3.8+**
+-   **Node.js 16+**
+-   **MongoDB** (로컬 또는 클라우드)
+-   **Git**
 
 ---
 
@@ -19,34 +19,41 @@ FastAPI 백엔드와 React 프론트엔드로 구성된 **자연어 기반 데�
 ### 1단계: 필수 프로그램 설치
 
 #### Python 설치
+
 1. [Python 공식 사이트](https://www.python.org/downloads/)에서 Python 3.8+ 다운로드
 2. 설치 시 **"Add Python to PATH"** 체크박스 반드시 선택
 3. 설치 확인:
+
 ```cmd
 python --version
 pip --version
 ```
 
 #### Node.js 설치
+
 1. [Node.js 공식 사이트](https://nodejs.org/)에서 LTS 버전 다운로드
 2. 기본 설정으로 설치
 3. 설치 확인:
+
 ```cmd
 node --version
 npm --version
 ```
 
 #### MongoDB 설치 (선택사항)
+
 1. [MongoDB Community Edition](https://www.mongodb.com/try/download/community) 다운로드
 2. 또는 [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) 클라우드 사용
 
 #### Git 설치
+
 1. [Git for Windows](https://git-scm.com/download/win) 다운로드
 2. 기본 설정으로 설치
 
 ### 2단계: 프로젝트 클론 및 실행
 
 #### PowerShell 또는 Command Prompt 열기
+
 ```cmd
 # 1. 프로젝트 클론
 git clone https://github.com/YOUR_USERNAME/cherry-back-project.git
@@ -74,6 +81,7 @@ python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 #### 프론트엔드 실행 (새 터미널 창)
+
 ```cmd
 cd cherry-back-project/frontend
 
@@ -91,6 +99,7 @@ npm start
 ### 1단계: 필수 패키지 설치
 
 #### Ubuntu/Debian 계열
+
 ```bash
 # 시스템 패키지 업데이트
 sudo apt update && sudo apt upgrade -y
@@ -104,6 +113,7 @@ sudo apt-get install -y nodejs
 ```
 
 #### CentOS/RHEL 계열
+
 ```bash
 # Python 및 개발 도구 설치
 sudo yum install python3 python3-pip nodejs npm git -y
@@ -151,22 +161,25 @@ npm start
 프로젝트에는 다양한 환경에 맞는 3가지 requirements 파일이 있습니다:
 
 ### 🖥️ requirements_windows.txt (Windows 권장)
-- **Windows 최적화** 버전
-- **CPU-only PyTorch** 사용으로 빠른 설치
-- OpenTelemetry 모니터링 기능 제외
-- Windows 전용 패키지 포함 (colorama, wmi)
+
+-   **Windows 최적화** 버전
+-   **CPU-only PyTorch** 사용으로 빠른 설치
+-   OpenTelemetry 모니터링 기능 제외
+-   Windows 전용 패키지 포함 (colorama, wmi)
 
 ### 🐧 requirements.txt (Linux/전체 기능)
-- **모든 기능** 포함
-- CUDA 지원 PyTorch
-- 전체 모니터링 및 관측 도구
-- 프로덕션 환경에 적합
+
+-   **모든 기능** 포함
+-   CUDA 지원 PyTorch
+-   전체 모니터링 및 관측 도구
+-   프로덕션 환경에 적합
 
 ### ⚡ requirements_minimal.txt (최소 기능)
-- **기본 API 기능**만 포함
-- AI/ML 기능 제외
-- **빠른 개발 및 테스트**용
-- 저사양 환경에 적합
+
+-   **기본 API 기능**만 포함
+-   AI/ML 기능 제외
+-   **빠른 개발 및 테스트**용
+-   저사양 환경에 적합
 
 ---
 
@@ -195,9 +208,9 @@ ENVIRONMENT=development
 
 설정이 완료되면 다음 주소로 접속할 수 있습니다:
 
-- **프론트엔드**: http://localhost:3000
-- **백엔드 API**: http://localhost:8000
-- **API 문서**: http://localhost:8000/docs (Swagger UI)
+-   **프론트엔드**: http://localhost:3000
+-   **백엔드 API**: http://localhost:8000
+-   **API 문서**: http://localhost:8000/docs (Swagger UI)
 
 ---
 
@@ -231,24 +244,28 @@ cherry-back-project/
 ## ✨ 주요 기능
 
 ### 🤖 AI 기반 자연어 분석
-- 자연어 질문을 통한 데이터베이스 쿼리
-- LangGraph를 활용한 워크플로우 자동화
-- GPT 기반 인사이트 생성
+
+-   자연어 질문을 통한 데이터베이스 쿼리
+-   LangGraph를 활용한 워크플로우 자동화
+-   GPT 기반 인사이트 생성
 
 ### 📊 시각화 및 리포트
-- Vega-Lite 기반 동적 차트 생성
-- PDF 리포트 자동 생성
-- 대시보드 및 분석 결과 저장
+
+-   Vega-Lite 기반 동적 차트 생성
+-   PDF 리포트 자동 생성
+-   대시보드 및 분석 결과 저장
 
 ### 😊 감정 분석
-- 3클래스 감정분석 (긍정/중립/부정)
-- 속성별 세분화 감정 분석
-- CSV 일괄 업로드 지원
+
+-   3클래스 감정분석 (긍정/중립/부정)
+-   속성별 세분화 감정 분석
+-   CSV 일괄 업로드 지원
 
 ### 🔐 사용자 인증
-- JWT 기반 인증 시스템
-- 사용자별 분석 이력 관리
-- 권한 기반 접근 제어
+
+-   JWT 기반 인증 시스템
+-   사용자별 분석 이력 관리
+-   권한 기반 접근 제어
 
 ---
 
@@ -257,6 +274,7 @@ cherry-back-project/
 ### 자주 발생하는 문제
 
 #### 1. MongoDB 연결 오류
+
 ```bash
 # MongoDB 서비스 시작 (Linux)
 sudo systemctl start mongod
@@ -268,6 +286,7 @@ sudo systemctl status mongod
 ```
 
 #### 2. 포트 충돌 오류
+
 ```bash
 # 포트 사용 중인 프로세스 확인 (Linux/WSL)
 lsof -i:8000  # 백엔드 포트
@@ -278,6 +297,7 @@ netstat -ano | findstr :8000
 ```
 
 #### 3. Python 의존성 설치 오류
+
 ```bash
 # pip 업그레이드
 pip install --upgrade pip
@@ -288,6 +308,7 @@ pip install -r requirements.txt --no-cache-dir
 ```
 
 #### 4. Node.js 의존성 설치 오류
+
 ```bash
 # npm 캐시 정리
 npm cache clean --force
@@ -311,6 +332,7 @@ npm run start:wsl
 ## 🔌 API 사용법
 
 ### 자연어 분석 요청
+
 ```bash
 curl -X POST "http://localhost:8000/query/" \
   -H "Content-Type: application/json" \
@@ -318,6 +340,7 @@ curl -X POST "http://localhost:8000/query/" \
 ```
 
 ### 감정분석 요청
+
 ```bash
 curl -X POST "http://localhost:8000/sentiment/analyze-text" \
   -H "Content-Type: application/json" \
@@ -346,19 +369,20 @@ curl -X POST "http://localhost:8000/sentiment/analyze-text" \
 
 문제가 있거나 질문이 있으시면 다음을 통해 문의해주세요:
 
-- **Issues**: [GitHub Issues](https://github.com/YOUR_USERNAME/cherry-back-project/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/YOUR_USERNAME/cherry-back-project/discussions)
+-   **Issues**: [GitHub Issues](https://github.com/YOUR_USERNAME/cherry-back-project/issues)
+-   **Discussions**: [GitHub Discussions](https://github.com/YOUR_USERNAME/cherry-back-project/discussions)
 
 ---
 
 ## 🔄 업데이트 로그
 
 ### v1.0.0 (2024-12-18)
-- 초기 릴리즈
-- FastAPI + React 기본 구조
-- LangGraph 기반 AI 워크플로우
-- 감정분석 시스템
-- JWT 인증 시스템
+
+-   초기 릴리즈
+-   FastAPI + React 기본 구조
+-   LangGraph 기반 AI 워크플로우
+-   감정분석 시스템
+-   JWT 인증 시스템
 
 ---
 
