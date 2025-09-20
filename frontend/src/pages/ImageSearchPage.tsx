@@ -23,6 +23,9 @@ import {
   ImageList,
   ImageListItem,
   ImageListItemBar,
+  Tabs,
+  Tab,
+  styled,
 } from '@mui/material';
 import {
   ImageSearch,
@@ -34,13 +37,43 @@ import {
   Refresh,
   ZoomIn,
   Download,
+  CloudUpload,
+  PhotoCamera,
+  Clear,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
-import { searchImages, listImages, ImageResult as APIImageResult, SearchResult as APISearchResult } from '../services/imageSearch';
+import { searchImages, searchImagesByFile, listImages, ImageResult as APIImageResult, SearchResult as APISearchResult } from '../services/imageSearch';
 
 // API에서 가져온 타입 사용
 type ImageResult = APIImageResult;
 type SearchResult = APISearchResult;
+
+// 스타일 컴포넌트
+const VisuallyHiddenInput = styled('input')({
+  clip: 'rect(0 0 0 0)',
+  clipPath: 'inset(50%)',
+  height: 1,
+  overflow: 'hidden',
+  position: 'absolute',
+  bottom: 0,
+  left: 0,
+  whiteSpace: 'nowrap',
+  width: 1,
+});
+
+const ImagePreviewBox = styled(Box)(({ theme }) => ({
+  border: `2px dashed ${theme.palette.divider}`,
+  borderRadius: theme.shape.borderRadius,
+  padding: theme.spacing(2),
+  textAlign: 'center',
+  backgroundColor: theme.palette.background.default,
+  position: 'relative',
+  minHeight: 200,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  flexDirection: 'column',
+}));
 
 const ImageSearchPage: React.FC = () => {
   const { user } = useAuth();
@@ -51,6 +84,10 @@ const ImageSearchPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [selectedImage, setSelectedImage] = useState<ImageResult | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  const [uploadedImagePreview, setUploadedImagePreview] = useState<string | null>(null);
+  const [searchMode, setSearchMode] = useState<'text' | 'image'>('text');
 
   // 추천 검색어 예시
   const suggestedQueries = [
@@ -61,11 +98,10 @@ const ImageSearchPage: React.FC = () => {
     "미니멀 액세서리"
   ];
 
-  // 컴포넌트 마운트 시 최근 검색 기록 로드 및 초기 이미지 로드
+  // 컴포넌트 마운트 시 최근 검색 기록만 로드
   useEffect(() => {
     if (user?.id) {
       loadRecentSearches();
-      loadInitialImages();
     }
   }, [user]);
 
@@ -81,20 +117,10 @@ const ImageSearchPage: React.FC = () => {
     }
   };
 
-  const loadInitialImages = async () => {
-    try {
-      setIsLoading(true);
-      const initialImages = await listImages(12);
-      setResult(initialImages);
-    } catch (error) {
-      console.error('Failed to load initial images:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleSubmit = async () => {
-    if (!query.trim() || !user?.id) return;
+    if (searchMode === 'text' && (!query.trim() || !user?.id)) return;
+    if (searchMode === 'image' && (!uploadedImage || !user?.id)) return;
 
     setIsLoading(true);
     setError(null);
@@ -109,37 +135,91 @@ const ImageSearchPage: React.FC = () => {
     }, 200);
 
     try {
-      // 실제 API 호출
-      const searchResult = await searchImages(query.trim());
-      
+      let searchResult;
+
+      if (searchMode === 'text') {
+        // 텍스트 검색
+        searchResult = await searchImages(query.trim());
+
+        // 최근 검색 목록 업데이트
+        const newSearch = {
+          id: Date.now().toString(),
+          query: query.trim(),
+          createdAt: new Date().toISOString()
+        };
+
+        const updatedSearches = [
+          newSearch,
+          ...recentSearches.filter(s => s.query !== query.trim()).slice(0, 8)
+        ];
+
+        setRecentSearches(updatedSearches);
+        localStorage.setItem('recentImageSearches', JSON.stringify(updatedSearches));
+        setQuery('');
+      } else {
+        // 이미지 검색
+        searchResult = await searchImagesByFile(uploadedImage!);
+
+        // 최근 검색 목록 업데이트 (이미지 이름 사용)
+        const newSearch = {
+          id: Date.now().toString(),
+          query: `이미지: ${uploadedImage!.name}`,
+          createdAt: new Date().toISOString()
+        };
+
+        const updatedSearches = [
+          newSearch,
+          ...recentSearches.slice(0, 8)
+        ];
+
+        setRecentSearches(updatedSearches);
+        localStorage.setItem('recentImageSearches', JSON.stringify(updatedSearches));
+      }
+
       setResult(searchResult);
       setProgress(100);
-      
-      // 최근 검색 목록 업데이트
-      const newSearch = { 
-        id: Date.now().toString(), 
-        query: query.trim(), 
-        createdAt: new Date().toISOString() 
-      };
-      
-      const updatedSearches = [
-        newSearch,
-        ...recentSearches.filter(s => s.query !== query.trim()).slice(0, 8)
-      ];
-      
-      setRecentSearches(updatedSearches);
-      
-      // 로컬 스토리지에 저장
-      localStorage.setItem('recentImageSearches', JSON.stringify(updatedSearches));
-      
-      // 입력 필드 초기화
-      setQuery('');
+      setHasSearched(true);
     } catch (error: any) {
       setError(error.message || '이미지 검색 중 오류가 발생했습니다.');
       setProgress(0);
     } finally {
       clearInterval(progressInterval);
       setIsLoading(false);
+    }
+  };
+
+  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && file.type.startsWith('image/')) {
+      setUploadedImage(file);
+
+      // 이미지 미리보기 생성
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setUploadedImagePreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+
+      setSearchMode('image');
+    } else {
+      setError('이미지 파일만 업로드할 수 있습니다.');
+    }
+  };
+
+  const handleClearImage = () => {
+    setUploadedImage(null);
+    setUploadedImagePreview(null);
+    setSearchMode('text');
+  };
+
+  const handleModeSwitch = (mode: 'text' | 'image') => {
+    setSearchMode(mode);
+    setError(null);
+    if (mode === 'text') {
+      setUploadedImage(null);
+      setUploadedImagePreview(null);
+    } else {
+      setQuery('');
     }
   };
 
@@ -185,7 +265,10 @@ const ImageSearchPage: React.FC = () => {
           이미지 검색
         </Typography>
         <Typography variant="body1" color="textSecondary">
-          자연어로 검색하면 AI가 관련 이미지를 찾아드립니다
+          {searchMode === 'text'
+            ? '자연어로 검색하면 AI가 관련 이미지를 찾아드립니다'
+            : '이미지를 첨부하면 유사한 이미지를 찾아드립니다'
+          }
         </Typography>
       </Box>
 
@@ -198,17 +281,103 @@ const ImageSearchPage: React.FC = () => {
                 <Collections sx={{ mr: 1 }} />
                 이미지 검색하기
               </Typography>
-              
-              <TextField
-                fullWidth
-                multiline
-                rows={2}
-                placeholder="예: 파란색 데님 재킷, 캐주얼한 스타일"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                sx={{ mb: 2 }}
-                disabled={isLoading}
-              />
+
+              {/* 검색 모드 탭 */}
+              <Tabs
+                value={searchMode}
+                onChange={(_, newValue) => handleModeSwitch(newValue)}
+                sx={{ mb: 3 }}
+              >
+                <Tab
+                  value="text"
+                  label="텍스트 검색"
+                  icon={<ImageSearch />}
+                  iconPosition="start"
+                />
+                <Tab
+                  value="image"
+                  label="이미지 검색"
+                  icon={<PhotoCamera />}
+                  iconPosition="start"
+                />
+              </Tabs>
+
+              {searchMode === 'text' ? (
+                // 텍스트 검색 입력
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={2}
+                  placeholder="예: 파란색 데님 재킷, 캐주얼한 스타일"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  sx={{ mb: 2 }}
+                  disabled={isLoading}
+                />
+              ) : (
+                // 이미지 업로드 영역
+                <Box sx={{ mb: 2 }}>
+                  {!uploadedImagePreview ? (
+                    <ImagePreviewBox>
+                      <CloudUpload sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                      <Typography variant="body1" color="text.secondary" gutterBottom>
+                        검색할 이미지를 업로드하세요
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        JPG, PNG, GIF 파일을 지원합니다
+                      </Typography>
+                      <Button
+                        component="label"
+                        variant="contained"
+                        startIcon={<CloudUpload />}
+                        disabled={isLoading}
+                      >
+                        이미지 선택
+                        <VisuallyHiddenInput
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                        />
+                      </Button>
+                    </ImagePreviewBox>
+                  ) : (
+                    <ImagePreviewBox>
+                      <Box sx={{ position: 'relative', width: '100%', maxWidth: 300 }}>
+                        <img
+                          src={uploadedImagePreview}
+                          alt="Upload preview"
+                          style={{
+                            width: '100%',
+                            height: 'auto',
+                            borderRadius: 8,
+                            maxHeight: 250,
+                            objectFit: 'contain'
+                          }}
+                        />
+                        <IconButton
+                          onClick={handleClearImage}
+                          sx={{
+                            position: 'absolute',
+                            top: -10,
+                            right: -10,
+                            backgroundColor: 'background.paper',
+                            boxShadow: 1,
+                            '&:hover': {
+                              backgroundColor: 'background.paper',
+                            }
+                          }}
+                          size="small"
+                        >
+                          <Clear />
+                        </IconButton>
+                      </Box>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                        {uploadedImage?.name}
+                      </Typography>
+                    </ImagePreviewBox>
+                  )}
+                </Box>
+              )}
 
               {isLoading && (
                 <Box sx={{ mb: 2 }}>
@@ -224,7 +393,11 @@ const ImageSearchPage: React.FC = () => {
                   variant="contained"
                   startIcon={isLoading ? <CircularProgress size={20} /> : <Send />}
                   onClick={handleSubmit}
-                  disabled={!query.trim() || isLoading}
+                  disabled={
+                    (searchMode === 'text' && !query.trim()) ||
+                    (searchMode === 'image' && !uploadedImage) ||
+                    isLoading
+                  }
                   sx={{ px: 4 }}
                 >
                   {isLoading ? '검색 중...' : '검색 시작'}
@@ -232,7 +405,7 @@ const ImageSearchPage: React.FC = () => {
                 <Button
                   variant="outlined"
                   startIcon={<Refresh />}
-                  onClick={() => setQuery('')}
+                  onClick={searchMode === 'text' ? () => setQuery('') : handleClearImage}
                   disabled={isLoading}
                 >
                   초기화
@@ -241,27 +414,29 @@ const ImageSearchPage: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* 추천 검색어 */}
-          <Card sx={{ mb: 3 }}>
-            <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                <AutoAwesome sx={{ mr: 1 }} />
-                추천 검색어
-              </Typography>
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {suggestedQueries.map((suggested, index) => (
-                  <Chip
-                    key={index}
-                    label={suggested}
-                    onClick={() => handleSuggestedQuery(suggested)}
-                    variant="outlined"
-                    sx={{ mb: 1 }}
-                    disabled={isLoading}
-                  />
-                ))}
-              </Box>
-            </CardContent>
-          </Card>
+          {/* 추천 검색어 - 텍스트 검색 모드일 때만 표시 */}
+          {searchMode === 'text' && (
+            <Card sx={{ mb: 3 }}>
+              <CardContent>
+                <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                  <AutoAwesome sx={{ mr: 1 }} />
+                  추천 검색어
+                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                  {suggestedQueries.map((suggested, index) => (
+                    <Chip
+                      key={index}
+                      label={suggested}
+                      onClick={() => handleSuggestedQuery(suggested)}
+                      variant="outlined"
+                      sx={{ mb: 1 }}
+                      disabled={isLoading}
+                    />
+                  ))}
+                </Box>
+              </CardContent>
+            </Card>
+          )}
 
           {/* 오류 메시지 */}
           {error && (
@@ -271,7 +446,7 @@ const ImageSearchPage: React.FC = () => {
           )}
 
           {/* 검색 결과 */}
-          {result && (
+          {result && hasSearched && (
             <Fade in={true}>
               <Card>
                 <CardContent>

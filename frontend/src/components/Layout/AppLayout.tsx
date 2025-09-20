@@ -25,7 +25,6 @@ import {
   Person,
   Share,
   Psychology,
-  Assessment,
   Analytics,
   Logout,
   Settings,
@@ -35,13 +34,13 @@ import { useAuth } from "../../contexts/AuthContext";
 
 const drawerWidth = 240;
 
-interface MenuItem {
+interface MenuItemType {
   text: string;
   icon: React.ReactElement;
   path: string;
 }
 
-const menuItems: MenuItem[] = [
+const menuItems: MenuItemType[] = [
   { text: "대시보드", icon: <Dashboard />, path: "/dashboard" },
   { text: "AI 스마트 분석", icon: <Psychology />, path: "/analysis" },
   { text: "이미지 검색", icon: <ImageSearch />, path: "/image-search" },

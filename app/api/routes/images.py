@@ -1,9 +1,11 @@
 from __future__ import annotations
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, UploadFile, File
 from fastapi.responses import FileResponse
 from typing import Optional
 from pathlib import Path
 import os
+import tempfile
+import shutil
 
 from app.services.image_gen import generate_image
 from app.utils.translate import translate_fashion_query_ko2en  # 한국어 쿼리 번역 유틸
@@ -147,3 +149,56 @@ async def search_images(q: str, limit: int = 9):
             return fallback
         except Exception:
             raise HTTPException(status_code=500, detail=f"검색 실패: {str(e)}")
+
+
+@router.post("/search-by-image")
+async def search_images_by_file(file: UploadFile = File(...), limit: int = 9):
+    """이미지 파일로 검색 API"""
+    try:
+        limit = _clamp_limit(limit)
+
+        # 이미지 파일 검증
+        if not file.content_type or not file.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail="이미지 파일만 업로드할 수 있습니다.")
+
+        # 파일 크기 제한 (10MB)
+        if file.size and file.size > 10 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="파일 크기는 10MB를 초과할 수 없습니다.")
+
+        # 임시 파일로 저장
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
+            # 파일 내용을 임시 파일에 복사
+            shutil.copyfileobj(file.file, tmp_file)
+            tmp_file_path = tmp_file.name
+
+        try:
+            print(f"[ImageSearch] Uploaded file: {file.filename} | Size: {file.size} bytes")
+
+            # TODO: 실제 이미지 유사도 검색 구현
+            # 현재는 모크 데이터로 응답
+            # 향후 CLIP 모델이나 다른 이미지 유사도 검색 모델 연동 필요
+
+            # 임시로 일반 검색 결과 반환 (유사 이미지 검색 구현 전까지)
+            fallback_result = await list_images(query=None, limit=limit)
+
+            # 응답 형태 조정
+            return {
+                "queryOriginal": f"이미지 파일: {file.filename}",
+                "queryUsed": "image_search",
+                "images": fallback_result["images"],
+                "totalCount": fallback_result["totalCount"],
+                "searchTime": 0.1
+            }
+
+        finally:
+            # 임시 파일 정리
+            try:
+                os.unlink(tmp_file_path)
+            except:
+                pass
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"이미지 검색 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"이미지 검색 실패: {str(e)}")
