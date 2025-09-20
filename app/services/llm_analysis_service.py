@@ -2,6 +2,13 @@
 import os, json, base64, io, pandas as pd, matplotlib.pyplot as plt
 import pymongo, torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from typing import Optional
+from bson import ObjectId
+from app.db.mongodb import db
+from app.services.embedding_service import get_embedding, cosine_similarity
+from app.langgraph.workflows import rag_board_workflow
+from datetime import datetime
+
 
 # Mongo 연결
 MONGO_URI = os.getenv("MONGO_URI", "mongodb+srv://cherry:1234@panguin5225.m6oav.mongodb.net/?retryWrites=true&w=majority&appName=Panguin5225")
@@ -43,6 +50,45 @@ Rules:
 - Use only fields from schema.
 - Never output text, only JSON.
 """
+
+def save_board_chat_log(question: str, answer: str, department: str = None):
+    try:
+        db.board_chats.insert_one({
+            "question": question,
+            "answer": answer,
+            "department": department,
+            "created_at": datetime.utcnow()
+        })
+    except Exception as e:
+        print("❌ 로그 저장 실패:", e)
+
+def run_rag_board_chat(question: str, department: Optional[str] = None):
+    q_vec = get_embedding(question)
+
+    query = {}
+    if department:
+        query["department"] = department
+    candidates = list(db.board_replies.find(query))
+
+    if not candidates:
+        return "관련 답변이 없습니다."
+
+    # 유사도 계산
+    scored = []
+    for c in candidates:
+        score = cosine_similarity(q_vec, c["vector"])
+        scored.append((c["content"], score))
+
+    # Top 5 답변 선택
+    top_replies = [txt for txt, _ in sorted(scored, key=lambda x: x[1], reverse=True)[:5]]
+
+    # context 생성
+    context = "\n".join(top_replies)
+
+    # LangGraph 호출
+    workflow = rag_board_workflow()
+    answer = workflow.invoke({"question": question, "context": context})
+    return answer
 
 def generate_mql(question: str):
     prompt = MQL_SYSTEM_PROMPT.format(schema=schema_json) + f"\n\nQuestion: {question}"

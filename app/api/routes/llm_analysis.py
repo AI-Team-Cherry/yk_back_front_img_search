@@ -5,7 +5,8 @@ import requests, os
 router = APIRouter(prefix="/llm-analysis", tags=["LLMAnalysis"])
 
 # Colab ngrok 주소 (환경변수로 관리 권장)
-COLAB_LLM_API = os.getenv("COLAB_LLM_API", "https://777a7e57fa2e.ngrok-free.app/analyze")
+COLAB_BASE_URL = os.getenv("COLAB_BASE_URL")
+COLAB_LLM_API = f"{COLAB_BASE_URL}/analyze"
 
 @router.post("/analyze")
 def analyze(payload: dict = Body(...)):
@@ -14,7 +15,7 @@ def analyze(payload: dict = Body(...)):
         return JSONResponse({"status": "error", "message": "query is required"}, status_code=400)
 
     try:
-        res = requests.post(COLAB_LLM_API, json={"query": question}, timeout=600)
+        res = requests.post(COLAB_LLM_API, json={"query": question}, timeout=6000)
         
         # ✅ 응답 내용 로그로 확인
         print("=== [LLM 요청 질문] ===")
