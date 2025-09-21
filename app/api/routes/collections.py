@@ -14,10 +14,19 @@ async def get_mongodb_collections(current_user=Depends(get_current_user)):
         # MongoDB에서 모든 컬렉션 이름 가져오기
         collections = await db.list_collection_names()
 
-        # 시스템 컬렉션 제외 (admin, config 등)
+        # 특정 컬렉션만 허용
+        allowed_collections = [
+            "orders",
+            "product",
+            "review_image_path",
+            "sellers",
+            "img_path_with_vec"
+        ]
+
+        # 허용된 컬렉션 중에서 실제 존재하는 것만 필터링
         filtered_collections = [
             col for col in collections
-            if not col.startswith('system.') and not col.startswith('admin.')
+            if col in allowed_collections
         ]
 
         return sorted(filtered_collections)

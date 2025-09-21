@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__vscode-mcp__execute_shell_command",
+      "Bash(pip install:*)",
+      "Read(//c/Final_Cherry/**)",
+      "Bash(python -m uvicorn:*)",
+      "Bash(curl:*)",
+      "Bash(npm ls:*)",
+      "Bash(netsh advfirewall firewall show rule:*)",
+      "Bash(findstr:*)",
+      "Bash(git fetch:*)",
+      "Bash(git stash:*)",
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)",
+      "Bash(git add:*)",
+      "Bash(npm start)",
+      "Bash(set PORT=3001)",
+      "Bash(npx tsc:*)",
+      "Bash(taskkill:*)",
+      "Bash(netstat:*)",
+      "Bash(powershell:*)",
+      "Bash(venvScripts:*)",
+      "Bash(venvScriptspip install sentence-transformers)",
+      "Bash(C:Final_Cherryyk_back_front_img_searchvenvScriptspip.exe install sentence-transformers)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

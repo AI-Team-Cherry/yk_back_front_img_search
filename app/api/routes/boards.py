@@ -82,11 +82,15 @@ async def create_post(department: str, payload: dict = Body(...), request: Reque
 @router.get("/{department}")
 async def list_posts(department: str):
     print("📥 [list_posts] department:", department)
-    posts = await db.boards.find({"department": department}).to_list(length=None)
-    for p in posts:
-        p["_id"] = str(p["_id"])
-    print("📤 [list_posts] count:", len(posts))
-    return posts
+    try:
+        posts = await db.boards.find({"department": department}).to_list(length=None)
+        for p in posts:
+            p["_id"] = str(p["_id"])
+        print("📤 [list_posts] count:", len(posts))
+        return posts
+    except Exception as e:
+        print("❌ [list_posts] error:", str(e))
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
 
 
 @router.post("/{post_id}/reply")

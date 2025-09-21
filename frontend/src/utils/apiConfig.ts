@@ -42,7 +42,7 @@ class ApiConfig {
     }
 
     // 모든 연결 실패시 기본값 사용
-    const fallbackUrl = 'http://localhost:8000';
+    const fallbackUrl = 'http://localhost:8001';
     console.error('⚠️ 모든 API 서버 연결 실패. 기본 포트 사용:', fallbackUrl);
     this.baseURL = fallbackUrl;
     this.isInitialized = true;

@@ -226,11 +226,15 @@ export const getSharedAnalyses = async (
   }
 };
 
-// 데이터 분석 실행
+// 데이터 분석 실행 (새로운 analyze-v2 엔드포인트 사용)
 export const runAnalysis = async (request: QueryRequest): Promise<AnalysisResult> => {
   try {
     const api = await getApiClient();
-    const response = await api.post('/api/analytics/analyze', request);
+    const response = await api.post('/llm-analysis/analyze-v2', {
+      query: request.query,
+      collections: request.collections,
+      format: 'analytics'
+    });
     return response.data;
   } catch (error: any) {
     console.error('데이터 분석 실행 오류:', error);
