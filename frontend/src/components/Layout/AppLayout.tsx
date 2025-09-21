@@ -25,26 +25,31 @@ import {
   Person,
   Share,
   Psychology,
-  Assessment,
   Analytics,
   Logout,
   Settings,
   ImageSearch,
+  AutoAwesome,
+  Chat,
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
+import { Forum } from "@mui/icons-material";
 
 const drawerWidth = 240;
 
-interface MenuItem {
+interface MenuItemType {
   text: string;
   icon: React.ReactElement;
   path: string;
 }
 
-const menuItems: MenuItem[] = [
+const menuItems: MenuItemType[] = [
   { text: "대시보드", icon: <Dashboard />, path: "/dashboard" },
   { text: "AI 스마트 분석", icon: <Psychology />, path: "/analysis" },
   { text: "이미지 검색", icon: <ImageSearch />, path: "/image-search" },
+  { text: "AI 패션 모델링", icon: <AutoAwesome />, path: "/fashion-modeling" },
+  { text: "부서별 게시판", icon: <Forum />, path: "/boards/MD" },
+  { text: "게시판 상담", icon: <Chat />, path: "/board-chat" },
   { text: "공유 분석", icon: <Share />, path: "/shared" },
   { text: "마이페이지", icon: <Person />, path: "/mypage" },
 ];

@@ -1,9 +1,10 @@
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from datetime import datetime
-from pymongo import ReturnDocument
+from pymongo import ReturnDocument, MongoClient, ASCENDING, DESCENDING
 from app.core.config import MONGO_URI, DB_NAME
 from bson import ObjectId
 from typing import Optional
+import os
 
 
 client = AsyncIOMotorClient(MONGO_URI)
@@ -42,15 +43,14 @@ async def update_last_login(employeeId: str):
 async def get_db(db_name: Optional[str] = None) -> AsyncIOMotorDatabase:
     """
     현재 모듈에서 사용하는 전역 Mongo 클라이언트를 활용해 DB 핸들 반환
-    기존 코드에서 client를 무엇으로 부르는지에 따라 수정하세요.
     """
-    from app.core.config import settings  # lazy import
+    from app.core.config import MONGO_URI, DB_NAME
     global _mongo_client
     try:
         _mongo_client
     except NameError:
-        _mongo_client = AsyncIOMotorClient(settings.MONGODB_URI)
-    return _mongo_client[db_name or settings.MONGODB_DBNAME]
+        _mongo_client = AsyncIOMotorClient(MONGO_URI)
+    return _mongo_client[db_name or DB_NAME]
 
 def to_plain_dict(doc):
     """
@@ -66,8 +66,21 @@ def to_plain_dict(doc):
             out[k] = v
     return out
 
+def init_indexes():
+    try:
+        db.boards.create_index([("department", ASCENDING)])
+        db.boards.create_index([("created_at", DESCENDING)])
+        db.board_vectors.create_index([("department", ASCENDING)])
+        print("✅ MongoDB indexes created")
+    except Exception as e:
+        print("❌ Index creation error:", e)
+
+init_indexes()
+
 async def get_collection(name: str):
     """
     MongoDB 컬렉션 핸들을 반환
     """
     return db[name]
+
+    

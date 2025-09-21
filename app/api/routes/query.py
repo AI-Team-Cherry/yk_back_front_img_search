@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 from datetime import datetime
@@ -11,13 +11,12 @@ from app.langgraph.dsl import build_prompt
 from app.services.qa_model import answer_question
 from app.services.report_service import generate_report
 from app.services.analysis_helpers import summarize_results
-from app.api.routes.auth import get_current_user
 
 router = APIRouter()
 
 class QueryIn(BaseModel):
     query: str
-    userId: Optional[str] = None  # 호환성을 위해 옵셔널로 유지
+    userId: Optional[str] = None  # ✅ body에서만 받음
 
 
 # ✅ Mongo 결과 정규화 함수 (ObjectId → str 변환)
@@ -35,7 +34,7 @@ def normalize_mongo_docs(docs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 
 @router.post("/")
-async def run_query(body: QueryIn, current_user: dict = Depends(get_current_user)):
+async def run_query(body: QueryIn):
     state = workflow.invoke({"query": body.query})
 
     # Mongo 실행
@@ -47,7 +46,7 @@ async def run_query(body: QueryIn, current_user: dict = Depends(get_current_user
         mongo_results = await run_aggregation(collection, pipeline)
         mongo_results = normalize_mongo_docs(mongo_results)  # ✅ ObjectId 처리
 
-    # RAG
+    # RAG 검색
     rag_docs = await rag_search(body.query, top_k=5)
     contexts = [c.get("text", "") for c in rag_docs]
     scores = [float(c.get("score", 0.5)) for c in rag_docs]
@@ -82,7 +81,7 @@ async def run_query(body: QueryIn, current_user: dict = Depends(get_current_user
             }
         }]
 
-    # 리포트
+    # 리포트 생성
     report = generate_report(
         f"{body.query} 리포트",
         {
@@ -94,7 +93,7 @@ async def run_query(body: QueryIn, current_user: dict = Depends(get_current_user
 
     # 저장 & 응답
     result_doc = {
-        "userId": body.userId or current_user["employeeId"],  # 사용자 ID 우선순위: body > current_user
+        "userId": body.userId or "anonymous",  # ✅ 인증 제거 → userId 없으면 anonymous
         "query": body.query,
         "output": {
             "mongodb_results": {

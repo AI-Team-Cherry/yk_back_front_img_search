@@ -1,5 +1,7 @@
 from transformers import GPT2LMHeadModel, GPT2Tokenizer, pipeline
 import torch
+import warnings
+warnings.filterwarnings("ignore")
 
 class AIModelService:
     def __init__(self):
@@ -22,7 +24,7 @@ class AIModelService:
         self.models["qa_generator"] = qa_pipe
         self.tokenizers["qa_generator"] = tok
 
-        print(f"✅ Q&A 모델 로딩 완료: {model_name}")
+        print(f"[OK] Q&A model loaded: {model_name}")
 
     def generate_answer(self, prompt: str, max_new_tokens: int = 200):
         pipe = self.models["qa_generator"]
