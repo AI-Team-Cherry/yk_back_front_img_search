@@ -94,23 +94,43 @@ const BoardChatPage: React.FC = () => {
         sx={{ bgcolor: "#fafafa" }}
       >
         {messages.map((msg, idx) => (
-          <Box key={idx} mb={1}>
-            <ChatMessageBubble sender={msg.sender} text={msg.text} />
-            {/* 🔹 답변 메시지에 postLink가 있으면 버튼 표시 */}
-            {msg.sender === "bot" && msg.postLink && (
-              <Button
-                size="small"
-                variant="outlined"
-                sx={{ mt: 1 }}
-                onClick={() => {
-                  if (msg.postLink) navigate(msg.postLink);
-                }}
-              >
-                관련 게시글 보기
-              </Button>
-            )}
-          </Box>
-        ))}
+  <Box key={idx} mb={1}>
+    <ChatMessageBubble sender={msg.sender} text={msg.text} />
+    {/* 🔹 답변 메시지에 postLink 있으면 버튼 */}
+    {msg.sender === "bot" && msg.postLink && (
+      <Button
+        size="small"
+        variant="outlined"
+        sx={{ mt: 1 }}
+        onClick={() => navigate(msg.postLink!)}
+      >
+        관련 게시글 보기
+      </Button>
+    )}
+
+    {/* 🔹 답변이 없을 때 "새 글 작성" 버튼 */}
+    {msg.sender === "bot" && msg.text === "관련 답변이 없습니다." && (
+      <Button
+        size="small"
+        color="secondary"
+        variant="contained"
+        sx={{ mt: 1 }}
+        onClick={() =>
+          navigate(`/boards/${department}/new`, {
+            state: {
+              prefillTitle: messages[messages.length - 2]?.text || "",
+              prefillContent:
+                "자동 생성됨: 챗봇에서 답변을 찾지 못했습니다. 추가 내용을 작성해 주세요.",
+            },
+          })
+        }
+      >
+        게시글 작성하기
+      </Button>
+    )}
+  </Box>
+))}
+
         {loading && (
           <Box display="flex" justifyContent="flex-start" mb={1}>
             <CircularProgress size={20} />

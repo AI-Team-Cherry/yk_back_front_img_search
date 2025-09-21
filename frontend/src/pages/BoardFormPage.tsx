@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
   TextField,
@@ -15,8 +15,14 @@ const API_BASE = process.env.REACT_APP_API_BASE_URL || "http://localhost:8000";
 const BoardFormPage: React.FC = () => {
   const { department } = useParams();
   const navigate = useNavigate();
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
+  const location = useLocation();
+
+  // 🔹 BoardChatPage에서 넘겨준 prefill 데이터 받기
+  const prefillTitle = (location.state as any)?.prefillTitle || "";
+  const prefillContent = (location.state as any)?.prefillContent || "";
+
+  const [title, setTitle] = useState(prefillTitle);
+  const [content, setContent] = useState(prefillContent);
   const [openSnackbar, setOpenSnackbar] = useState(false);
 
   const handleSubmit = async () => {
