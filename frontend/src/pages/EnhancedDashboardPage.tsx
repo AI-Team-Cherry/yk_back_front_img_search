@@ -395,9 +395,11 @@ const EnhancedDashboardPage: React.FC = () => {
           </Box>
           <Box>
             <Tooltip title="새로고침">
-              <IconButton onClick={handleRefresh} disabled={loading} sx={{ color: '#94a3b8' }}>
-                <Refresh />
-              </IconButton>
+              <span>
+                <IconButton onClick={handleRefresh} disabled={loading} sx={{ color: '#94a3b8' }}>
+                  <Refresh />
+                </IconButton>
+              </span>
             </Tooltip>
           </Box>
         </Box>

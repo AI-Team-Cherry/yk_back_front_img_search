@@ -164,9 +164,11 @@ const DraggableDashboardPage: React.FC = () => {
           </Box>
           <Box>
             <Tooltip title="새로고침">
-              <IconButton onClick={handleRefresh} disabled={loading} sx={{ color: 'text.secondary' }}>
-                <Refresh />
-              </IconButton>
+              <span>
+                <IconButton onClick={handleRefresh} disabled={loading} sx={{ color: 'text.secondary' }}>
+                  <Refresh />
+                </IconButton>
+              </span>
             </Tooltip>
           </Box>
         </Box>
