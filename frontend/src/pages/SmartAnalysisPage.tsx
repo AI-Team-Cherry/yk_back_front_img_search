@@ -39,6 +39,10 @@ import {
 import { useAuth } from "../contexts/AuthContext";
 import { getAnalysisResults } from "../services/aiQuery";
 import { VegaEmbed } from "react-vega";
+import ReactMarkdown from "react-markdown";
+import { exportAnalysisToPDF } from "../utils/pdfExport";
+import CollectionSelector from "../components/Collections/CollectionSelector";
+
 
 // ✅ Mongo 결과 테이블
 const renderMongoTable = (docs: any[]) => {
@@ -200,6 +204,7 @@ const renderCorrelationHeatmap = (correlations: any) => {
   );
 };
 
+
 const SmartAnalysisPage: React.FC = () => {
   const { user } = useAuth();
   const [query, setQuery] = useState("");
@@ -208,6 +213,9 @@ const SmartAnalysisPage: React.FC = () => {
   const [recentQueries, setRecentQueries] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [shareLoading, setShareLoading] = useState(false);
+  const [shareSuccess, setShareSuccess] = useState(false);
+  const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
 
   const suggestedQueries = [
     "최근 한 달간 가장 인기있는 상품 카테고리는?",
@@ -237,6 +245,15 @@ const SmartAnalysisPage: React.FC = () => {
   const handleSubmit = async () => {
     if (!query.trim() || !user?.id) return;
 
+    // 컬렉션 선택 확인
+    if (selectedCollections.length === 0) {
+      setError("분석할 컬렉션을 먼저 선택해주세요.");
+      return;
+    }
+
+    console.log("🔍 Selected collections for analysis:", selectedCollections);
+    console.log("📝 Query:", query.trim());
+
     setIsLoading(true);
     setError(null);
     setProgress(0);
@@ -249,14 +266,17 @@ const SmartAnalysisPage: React.FC = () => {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        `${process.env.REACT_APP_API_URL || "http://localhost:8000"}/llm-analysis/analyze`,
+        `${process.env.REACT_APP_API_URL || "http://localhost:8001"}/llm-analysis/analyze`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify({ query: query.trim() }),
+          body: JSON.stringify({
+            query: query.trim(),
+            collections: selectedCollections
+          }),
         }
       );
 
@@ -321,7 +341,101 @@ const SmartAnalysisPage: React.FC = () => {
     if (!result) return;
     alert("공유 기능은 곧 추가됩니다!");
   };
+  // MongoDB 결과 전용 렌더링 함수
+  const renderMongoResults = (data: any[]) => {
+    if (!data || !Array.isArray(data) || data.length === 0) return null;
 
+    return (
+      <Card sx={{ mb: 2 }}>
+        <CardContent>
+          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+            <QueryStats />
+            <Typography variant="h6" sx={{ ml: 1 }}>
+              MongoDB 결과 ({data.length}건)
+            </Typography>
+          </Box>
+
+          {data.slice(0, 5).map((item, index) => (
+            <Card key={index} variant="outlined" sx={{ mb: 2, p: 2 }}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={8}>
+                  <Typography variant="subtitle2" gutterBottom>
+                    📝 리뷰 내용
+                  </Typography>
+                  <Typography variant="body2" sx={{ mb: 1, maxHeight: 100, overflow: "hidden" }}>
+                    {item.text?.substring(0, 200)}
+                    {item.text?.length > 200 && "..."}
+                  </Typography>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Typography variant="caption" color="textSecondary">
+                    👤 작성자: {item.user_id || "N/A"}
+                  </Typography>
+                  <br />
+                  <Typography variant="caption" color="textSecondary">
+                    ⭐ 평점: {item.score || "N/A"}
+                  </Typography>
+                  <br />
+                  <Typography variant="caption" color="textSecondary">
+                    📅 작성일: {item.review_created_at || "N/A"}
+                  </Typography>
+                  <br />
+                  <Typography variant="caption" color="textSecondary">
+                    😊 감정: {item.overall_sentiment || "N/A"}
+                    ({item.overall_confidence ? (item.overall_confidence * 100).toFixed(1) + "%" : "N/A"})
+                  </Typography>
+                </Grid>
+              </Grid>
+            </Card>
+          ))}
+
+          {data.length > 5 && (
+            <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
+              📌 상위 5건만 표시됨 (전체 {data.length}건)
+            </Typography>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  // Vector 검색 결과 전용 렌더링 함수
+  const renderVectorResults = (vectorResults: any) => {
+    if (!vectorResults) return null;
+
+    return (
+      <Card sx={{ mb: 2 }}>
+        <CardContent>
+          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
+            <Psychology />
+            <Typography variant="h6" sx={{ ml: 1 }}>
+              Vector 검색 결과
+            </Typography>
+          </Box>
+
+          {vectorResults.context && vectorResults.context.length > 0 && (
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                🔍 관련 문맥
+              </Typography>
+              {vectorResults.context.map((ctx: string, index: number) => (
+                <Chip
+                  key={index}
+                  label={`${ctx} (유사도: ${vectorResults.similarity_scores?.[index] || "N/A"})`}
+                  variant="outlined"
+                  sx={{ mr: 1, mb: 1 }}
+                />
+              ))}
+            </Box>
+          )}
+
+          <Typography variant="body2" color="textSecondary">
+            💡 벡터 검색을 통해 질의와 유사한 문맥을 찾았습니다.
+          </Typography>
+        </CardContent>
+      </Card>
+    );
+  };
   const formatDate = (dateString: string) =>
     new Date(dateString).toLocaleString("ko-KR");
 
@@ -354,7 +468,27 @@ const SmartAnalysisPage: React.FC = () => {
               >
                 <QueryStats sx={{ mr: 1 }} />
                 AI에게 질문하기
+                {selectedCollections.length > 0 && (
+                  <Chip
+                    label={`📊 ${selectedCollections.length}개 컬렉션`}
+                    size="small"
+                    color="primary"
+                    sx={{ ml: 2 }}
+                  />
+                )}
               </Typography>
+              {selectedCollections.length > 0 && (
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  선택된 컬렉션: {selectedCollections.map((collection, index) => (
+                    <Chip
+                      key={collection}
+                      label={collection}
+                      size="small"
+                      sx={{ mr: 0.5, ml: index === 0 ? 0.5 : 0 }}
+                    />
+                  ))}
+                </Alert>
+              )}
               <TextField
                 fullWidth
                 multiline
@@ -609,58 +743,12 @@ const SmartAnalysisPage: React.FC = () => {
 
         </Grid>
 
-        {/* 최근 이력 */}
+        {/* 컬렉션 선택 패널 */}
         <Grid item xs={12} md={4}>
-          <Card>
-            <CardContent>
-              <Typography
-                variant="h6"
-                gutterBottom
-                sx={{ display: "flex", alignItems: "center" }}
-              >
-                <History sx={{ mr: 1 }} /> 최근 분석 이력
-              </Typography>
-              <Divider sx={{ mb: 2 }} />
-              {recentQueries.length === 0 ? (
-                <Typography
-                  variant="body2"
-                  color="textSecondary"
-                  textAlign="center"
-                  sx={{ py: 2 }}
-                >
-                  아직 분석 이력이 없습니다.
-                </Typography>
-              ) : (
-                <List>
-                  {recentQueries.map((item, index) => (
-                    <ListItem
-                      key={item._id || item.id || `query-${index}`}
-                      sx={{
-                        px: 0,
-                        py: 1,
-                        cursor: "pointer",
-                        "&:hover": { bgcolor: "action.hover" },
-                        borderRadius: 1,
-                      }}
-                      onClick={() => setQuery(item.query)}
-                    >
-                      <ListItemIcon>
-                        <QueryStats color="primary" />
-                      </ListItemIcon>
-                      <ListItemText
-                        primary={
-                          <Typography variant="body2" noWrap>
-                            {item.query}
-                          </Typography>
-                        }
-                        secondary={formatDate(item.createdAt)}
-                      />
-                    </ListItem>
-                  ))}
-                </List>
-              )}
-            </CardContent>
-          </Card>
+          <CollectionSelector
+            selectedCollections={selectedCollections}
+            onCollectionSelect={setSelectedCollections}
+          />
         </Grid>
       </Grid>
     </Box>

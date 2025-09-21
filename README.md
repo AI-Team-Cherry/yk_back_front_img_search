@@ -1,389 +1,326 @@
-# 🍒 Cherry Back Project - AI 분석 플랫폼
+# 🤖 AI Analytics Platform
 
-FastAPI 백엔드와 React 프론트엔드로 구성된 **자연어 기반 데이터 분석 플랫폼**입니다.  
-무신사(의류 커머스) 데이터를 대상으로 **자연어 질의 → 데이터 조회/분석 → 시각화/리포트**까지 한 번에 처리합니다.
+MongoDB 데이터를 기반으로 한 스마트 AI 분석 플랫폼입니다. 자연어로 질문하면 AI가 데이터를 분석하고 인사이트를 제공합니다.
+
+---
+
+## 🚀 5분 안에 실행하기 (초간단 가이드)
+
+**이것만 따라하세요! Windows 기준입니다.**
+
+### 📌 1단계: 필수 프로그램 설치
+1. [Python](https://www.python.org/downloads/) 설치 (설치할 때 **"Add Python to PATH"** 체크!)
+2. [Node.js](https://nodejs.org/) 설치 (LTS 버전)
+3. [Git](https://git-scm.com/download/win) 설치
+
+### 📌 2단계: 프로젝트 다운로드
+```bash
+git clone https://github.com/your-username/ai-analytics-platform.git
+cd ai-analytics-platform
+```
+
+### 📌 3단계: 환경 설정
+```bash
+# 1. Python 가상환경 만들기
+python -m venv venv
+
+# 2. 가상환경 활성화
+venv\Scripts\activate
+
+# 3. Python 패키지 설치
+pip install -r requirements.txt
+
+# 4. 환경변수 파일 복사
+copy .env.example .env
+```
+
+**⚠️ 중요: `.env` 파일을 메모장으로 열어서 MongoDB 주소를 본인 것으로 수정하세요!**
+
+### 📌 4단계: 프론트엔드 설정
+**새 터미널 창을 여세요!**
+```bash
+# 1. frontend 폴더로 이동
+cd frontend
+
+# 2. 패키지 설치
+npm install
+
+# 3. 원래 폴더로 돌아오기
+cd ..
+```
+
+### 📌 5단계: 실행
+**터미널 2개가 필요합니다!**
+
+**터미널 1:**
+```bash
+start-backend.bat
+```
+
+**터미널 2:**
+```bash
+start-frontend.bat
+```
+
+### 📌 6단계: 접속
+브라우저를 열고 http://localhost:3000 접속!
+
+### ✅ 끝!
+
+**잘 안되면 [상세 가이드](#📋-사전-요구사항)를 확인하세요.**
+
+---
+
+## ✨ 주요 기능
+
+- 🔐 **사용자 인증 시스템** - JWT 기반 로그인/회원가입
+- 🗄️ **MongoDB 컬렉션 선택** - 여러 컬렉션을 선택하여 분석
+- 🤖 **AI 자연어 분석** - 자연어로 질문하면 AI가 데이터 분석
+- 📊 **시각화 결과** - Vega-Lite 기반 차트 생성
+- 📤 **분석 결과 공유** - PDF 내보내기 및 공유 기능
+- 🖼️ **이미지 검색** - 이미지 기반 검색 기능
+- 👤 **프로필 관리** - 사용자 정보 수정
+
+## 🛠️ 기술 스택
+
+### 백엔드
+- **FastAPI** - 고성능 Python 웹 프레임워크
+- **MongoDB Atlas** - 클라우드 데이터베이스
+- **Motor** - 비동기 MongoDB 드라이버
+- **JWT** - 인증 토큰
+- **Uvicorn** - ASGI 서버
+
+### 프론트엔드
+- **React 18** + **TypeScript**
+- **Material-UI (MUI)** - UI 컴포넌트 라이브러리
+- **React Router** - 라우팅
+- **Axios** - HTTP 클라이언트
+- **Vega-Lite** - 데이터 시각화
 
 ## 🚀 빠른 시작 가이드
 
-### 📋 시스템 요구사항
+## 📋 사전 요구사항
 
--   **Python 3.8+**
--   **Node.js 16+**
--   **MongoDB** (로컬 또는 클라우드)
--   **Git**
+- **Node.js** 16.0.0 이상
+- **Python** 3.8 이상
+- **MongoDB Atlas** 계정 (또는 로컬 MongoDB)
+- **Git**
 
----
+## 🚀 설치 및 실행
 
-## 🖥️ Windows 사용자 설정 가이드
+### 1. 저장소 클론
 
-### 1단계: 필수 프로그램 설치
-
-#### Python 설치
-
-1. [Python 공식 사이트](https://www.python.org/downloads/)에서 Python 3.8+ 다운로드
-2. 설치 시 **"Add Python to PATH"** 체크박스 반드시 선택
-3. 설치 확인:
-
-```cmd
-python --version
-pip --version
+```bash
+git clone https://github.com/your-username/ai-analytics-platform.git
+cd ai-analytics-platform
 ```
 
-#### Node.js 설치
+### 2. 백엔드 설정
 
-1. [Node.js 공식 사이트](https://nodejs.org/)에서 LTS 버전 다운로드
-2. 기본 설정으로 설치
-3. 설치 확인:
-
-```cmd
-node --version
-npm --version
-```
-
-#### MongoDB 설치 (선택사항)
-
-1. [MongoDB Community Edition](https://www.mongodb.com/try/download/community) 다운로드
-2. 또는 [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) 클라우드 사용
-
-#### Git 설치
-
-1. [Git for Windows](https://git-scm.com/download/win) 다운로드
-2. 기본 설정으로 설치
-
-### 2단계: 프로젝트 클론 및 실행
-
-#### PowerShell 또는 Command Prompt 열기
-
-```cmd
-# 1. 프로젝트 클론
-git clone https://github.com/YOUR_USERNAME/cherry-back-project.git
-cd cherry-back-project
-
-# 2. Python 가상환경 생성 및 활성화
+```bash
+# Python 가상환경 생성
 python -m venv venv
+
+# 가상환경 활성화 (Windows)
 venv\Scripts\activate
 
-# 3. Python 의존성 설치 (Windows 최적화 버전)
-pip install -r requirements_windows.txt
-
-# 또는 일반 버전 (더 많은 기능, 더 오래 걸림)
-# pip install -r requirements.txt
-
-# 또는 최소 버전 (AI 기능 제외, 빠른 설치)
-# pip install -r requirements_minimal.txt
-
-# 4. 환경변수 설정
-copy .env.example .env
-# .env 파일을 메모장으로 열어서 MongoDB URI 설정
-
-# 5. 백엔드 서버 실행 (새 터미널)
-python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-#### 프론트엔드 실행 (새 터미널 창)
-
-```cmd
-cd cherry-back-project/frontend
-
-# Node.js 의존성 설치
-npm install
-
-# React 개발 서버 실행
-npm start
-```
-
----
-
-## 🐧 Linux/WSL 사용자 설정 가이드
-
-### 1단계: 필수 패키지 설치
-
-#### Ubuntu/Debian 계열
-
-```bash
-# 시스템 패키지 업데이트
-sudo apt update && sudo apt upgrade -y
-
-# Python 및 개발 도구 설치
-sudo apt install python3 python3-pip python3-venv nodejs npm git mongodb -y
-
-# Node.js 최신 버전 설치 (선택사항)
-curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-sudo apt-get install -y nodejs
-```
-
-#### CentOS/RHEL 계열
-
-```bash
-# Python 및 개발 도구 설치
-sudo yum install python3 python3-pip nodejs npm git -y
-
-# MongoDB 설치 (별도 저장소 필요)
-# 또는 Docker 사용: docker run -d -p 27017:27017 mongo
-```
-
-### 2단계: 프로젝트 실행
-
-```bash
-# 1. 프로젝트 클론
-git clone https://github.com/YOUR_USERNAME/cherry-back-project.git
-cd cherry-back-project
-
-# 2. Python 가상환경 생성 및 활성화
-python3 -m venv venv
+# 가상환경 활성화 (macOS/Linux)
 source venv/bin/activate
 
-# 3. Python 의존성 설치
+# 패키지 설치
 pip install -r requirements.txt
-
-# 4. 환경변수 설정
-cp .env.example .env
-nano .env  # 또는 vim .env
-
-# 5. 백엔드 서버 실행 (백그라운드)
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 &
-
-# 6. 프론트엔드 실행
-cd frontend
-npm install
-
-# WSL 환경인 경우
-npm run start:wsl
-
-# 일반 Linux 환경인 경우
-npm start
 ```
 
----
-
-## 📦 Requirements 파일 설명
-
-프로젝트에는 다양한 환경에 맞는 3가지 requirements 파일이 있습니다:
-
-### 🖥️ requirements_windows.txt (Windows 권장)
-
--   **Windows 최적화** 버전
--   **CPU-only PyTorch** 사용으로 빠른 설치
--   OpenTelemetry 모니터링 기능 제외
--   Windows 전용 패키지 포함 (colorama, wmi)
-
-### 🐧 requirements.txt (Linux/전체 기능)
-
--   **모든 기능** 포함
--   CUDA 지원 PyTorch
--   전체 모니터링 및 관측 도구
--   프로덕션 환경에 적합
-
-### ⚡ requirements_minimal.txt (최소 기능)
-
--   **기본 API 기능**만 포함
--   AI/ML 기능 제외
--   **빠른 개발 및 테스트**용
--   저사양 환경에 적합
-
----
-
-## 🔧 환경설정 파일 (.env)
+### 3. 환경변수 설정
 
 프로젝트 루트에 `.env` 파일을 생성하고 다음 내용을 입력하세요:
 
 ```env
 # MongoDB 설정
-MONGODB_URI=mongodb://localhost:27017/
-MONGODB_DB=cherry_back_db
+MONGO_URI=mongodb+srv://your-username:your-password@your-cluster.mongodb.net/your-database
+DB_NAME=your-database-name
 
-# JWT 보안 키 (랜덤 문자열로 변경하세요)
-SECRET_KEY=your-super-secret-key-change-this-in-production
+# JWT 설정
+SECRET_KEY=your-super-secret-key-here
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=30
 
-# HuggingFace 토큰 (선택사항 - AI 모델 사용시)
-HUGGINGFACE_HUB_TOKEN=hf_your_token_here
-
-# 개발 환경 설정
-ENVIRONMENT=development
+# 외부 LLM API (선택사항)
+COLAB_LLM_API=https://your-ngrok-address.ngrok-free.app/analyze
 ```
 
----
+### 4. 프론트엔드 설정
 
-## 🌐 접속 URL
+```bash
+# 프론트엔드 디렉토리로 이동
+cd frontend
 
-설정이 완료되면 다음 주소로 접속할 수 있습니다:
+# 패키지 설치
+npm install
 
--   **프론트엔드**: http://localhost:3000
--   **백엔드 API**: http://localhost:8000
--   **API 문서**: http://localhost:8000/docs (Swagger UI)
+# 환경변수 설정 (frontend/.env.development)
+echo "REACT_APP_API_URL=http://localhost:8001" > .env.development
+```
+
+### 5. 실행
+
+**백엔드 실행:**
+```bash
+# 프로젝트 루트에서
+uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+```
+
+**프론트엔드 실행:**
+```bash
+# frontend 디렉토리에서
+npm start
+```
+
+서버가 정상적으로 실행되면:
+- 백엔드: http://localhost:8001
+- 프론트엔드: http://localhost:3000
+- API 문서: http://localhost:8001/docs
 
 ---
 
 ## 📂 프로젝트 구조
 
 ```
-cherry-back-project/
-├── app/                          # FastAPI 백엔드
-│   ├── main.py                   # 진입점
-│   ├── api/routes/               # API 라우트
+yk_back_front_img_search/
+├── app/                          # 백엔드 FastAPI 애플리케이션
+│   ├── api/                      # API 라우터
+│   │   └── routes/               # 개별 라우트 파일들
+│   │       ├── auth.py           # 인증 관련 API
+│   │       ├── collections.py    # 컬렉션 관리 API
+│   │       ├── llm_analysis.py   # AI 분석 API
+│   │       ├── images.py         # 이미지 검색 API
+│   │       └── ...
 │   ├── core/                     # 핵심 설정
-│   ├── db/                       # 데이터베이스
+│   │   ├── config.py             # 환경변수 설정
+│   │   └── security.py           # JWT 보안 설정
+│   ├── db/                       # 데이터베이스 연결
+│   │   └── mongodb.py            # MongoDB 설정
 │   ├── models/                   # 데이터 모델
+│   │   └── user.py               # 사용자 모델
 │   ├── services/                 # 비즈니스 로직
-│   └── langgraph/               # AI 워크플로우
+│   └── main.py                   # FastAPI 메인 애플리케이션
 ├── frontend/                     # React 프론트엔드
-│   ├── src/
-│   │   ├── components/          # 재사용 컴포넌트
-│   │   ├── pages/              # 페이지 컴포넌트
-│   │   ├── services/           # API 호출
-│   │   └── contexts/           # React Context
-│   ├── public/
-│   └── package.json
+│   ├── public/                   # 정적 파일
+│   ├── src/                      # 소스 코드
+│   │   ├── components/           # 재사용 가능한 컴포넌트
+│   │   │   ├── Collections/      # 컬렉션 선택 컴포넌트
+│   │   │   └── Layout/           # 레이아웃 컴포넌트
+│   │   ├── contexts/             # React Context
+│   │   ├── pages/                # 페이지 컴포넌트
+│   │   │   ├── SmartAnalysisPage.tsx  # AI 분석 페이지
+│   │   │   ├── LoginPage.tsx     # 로그인 페이지
+│   │   │   └── ...
+│   │   ├── services/             # API 서비스
+│   │   ├── types/                # TypeScript 타입 정의
+│   │   └── utils/                # 유틸리티 함수
+│   ├── package.json              # npm 의존성
+│   └── ...
 ├── requirements.txt              # Python 의존성
-├── .env                         # 환경변수 (생성 필요)
-└── README.md
+├── .env.example                  # 환경변수 예시
+└── README.md                     # 이 파일
 ```
+
+## 🔧 주요 API 엔드포인트
+
+### 인증
+- `POST /auth/login` - 로그인
+- `POST /auth/register` - 회원가입
+- `GET /auth/me` - 현재 사용자 정보
+- `PUT /auth/profile` - 프로필 업데이트
+
+### 컬렉션 관리
+- `GET /api/collections` - MongoDB 컬렉션 목록
+- `GET /api/collections/{collection_name}/info` - 컬렉션 정보
+
+### AI 분석
+- `POST /llm-analysis/analyze` - 자연어 AI 분석
+
+### 기타
+- `GET /health` - 서버 상태 확인
+- `GET /docs` - API 문서 (Swagger UI)
+
+## 🎯 사용 방법
+
+1. **회원가입/로그인**: 사용자 계정을 생성하고 로그인합니다.
+
+2. **컬렉션 선택**: 오른쪽 패널에서 분석하고 싶은 MongoDB 컬렉션을 선택합니다. (다중 선택 가능)
+
+3. **AI 질문**: 자연어로 질문을 입력합니다.
+   - 예: "최근 한 달간 가장 인기있는 상품 카테고리는 무엇인가요?"
+   - 예: "신규 가입자 중에서 30일 안에 첫 구매할 확률 높은 사람들 리스트 뽑아줘"
+
+4. **결과 확인**: AI가 분석한 결과와 시각화를 확인합니다.
+
+5. **공유**: 분석 결과를 PDF로 내보내거나 다른 사용자와 공유할 수 있습니다.
 
 ---
 
-## ✨ 주요 기능
+## 🔒 보안 설정
 
-### 🤖 AI 기반 자연어 분석
+### JWT 토큰
+- 액세스 토큰은 30분 후 만료됩니다.
+- `SECRET_KEY`는 반드시 강력한 키로 설정하세요.
 
--   자연어 질문을 통한 데이터베이스 쿼리
--   LangGraph를 활용한 워크플로우 자동화
--   GPT 기반 인사이트 생성
+### CORS 설정
+현재 개발 환경용으로 설정되어 있습니다. 프로덕션 환경에서는 `app/main.py`의 CORS 설정을 수정하세요.
 
-### 📊 시각화 및 리포트
+## 🐛 문제 해결
 
--   Vega-Lite 기반 동적 차트 생성
--   PDF 리포트 자동 생성
--   대시보드 및 분석 결과 저장
+### 일반적인 문제들
 
-### 😊 감정 분석
+**1. MongoDB 연결 오류**
+```
+pymongo.errors.ServerSelectionTimeoutError
+```
+- `.env` 파일의 `MONGO_URI` 확인
+- MongoDB Atlas 네트워크 접근 설정 확인
+- 방화벽 설정 확인
 
--   3클래스 감정분석 (긍정/중립/부정)
--   속성별 세분화 감정 분석
--   CSV 일괄 업로드 지원
+**2. 프론트엔드 API 연결 오류**
+```
+CORS policy error
+```
+- 백엔드가 8001 포트에서 실행 중인지 확인
+- `frontend/.env.development` 파일 확인
 
-### 🔐 사용자 인증
+**3. 패키지 설치 오류**
+```
+pip install 실패
+```
+- Python 버전 확인 (3.8 이상)
+- 가상환경 활성화 확인
 
--   JWT 기반 인증 시스템
--   사용자별 분석 이력 관리
--   권한 기반 접근 제어
+### 로그 확인
 
----
-
-## 🚑 문제해결
-
-### 자주 발생하는 문제
-
-#### 1. MongoDB 연결 오류
-
+**백엔드 로그:**
 ```bash
-# MongoDB 서비스 시작 (Linux)
-sudo systemctl start mongod
-
-# MongoDB 상태 확인
-sudo systemctl status mongod
-
-# Windows에서는 MongoDB Compass 또는 서비스 관리자에서 확인
+uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload --log-level debug
 ```
 
-#### 2. 포트 충돌 오류
-
-```bash
-# 포트 사용 중인 프로세스 확인 (Linux/WSL)
-lsof -i:8000  # 백엔드 포트
-lsof -i:3000  # 프론트엔드 포트
-
-# Windows에서는
-netstat -ano | findstr :8000
-```
-
-#### 3. Python 의존성 설치 오류
-
-```bash
-# pip 업그레이드
-pip install --upgrade pip
-
-# 캐시 삭제 후 재설치
-pip cache purge
-pip install -r requirements.txt --no-cache-dir
-```
-
-#### 4. Node.js 의존성 설치 오류
-
-```bash
-# npm 캐시 정리
-npm cache clean --force
-
-# node_modules 삭제 후 재설치
-rm -rf node_modules package-lock.json  # Linux/WSL
-npm install
-```
-
-### WSL 사용자 추가 팁
-
-WSL 환경에서는 파일 변경 감지를 위해 폴링 모드를 사용해야 합니다:
-
-```bash
-# 프론트엔드 실행시
-npm run start:wsl
-```
-
----
-
-## 🔌 API 사용법
-
-### 자연어 분석 요청
-
-```bash
-curl -X POST "http://localhost:8000/query/" \
-  -H "Content-Type: application/json" \
-  -d '{"userId": "user1", "query": "브랜드별 매출 현황을 보여줘"}'
-```
-
-### 감정분석 요청
-
-```bash
-curl -X POST "http://localhost:8000/sentiment/analyze-text" \
-  -H "Content-Type: application/json" \
-  -d '{"text": "배송이 빠르고 품질이 좋아요"}'
-```
-
----
+**프론트엔드 로그:**
+브라우저 개발자 도구 → Console 탭
 
 ## 🤝 기여하기
 
-1. 이 저장소를 Fork 합니다
-2. 새 브랜치를 만듭니다: `git checkout -b feature/amazing-feature`
-3. 변경사항을 커밋합니다: `git commit -m 'Add amazing feature'`
-4. 브랜치에 Push 합니다: `git push origin feature/amazing-feature`
-5. Pull Request를 생성합니다
+1. 이 저장소를 포크합니다.
+2. 새로운 기능 브랜치를 생성합니다. (`git checkout -b feature/AmazingFeature`)
+3. 변경사항을 커밋합니다. (`git commit -m 'Add some AmazingFeature'`)
+4. 브랜치에 푸시합니다. (`git push origin feature/AmazingFeature`)
+5. Pull Request를 생성합니다.
+
+## 📝 라이선스
+
+이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 `LICENSE` 파일을 확인하세요.
+
+## 📞 문의
+
+프로젝트에 대한 질문이나 제안사항이 있으시면 이슈를 생성해 주세요.
 
 ---
 
-## 📄 라이선스
-
-이 프로젝트는 MIT 라이선스 하에 있습니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
-
----
-
-## 📞 지원
-
-문제가 있거나 질문이 있으시면 다음을 통해 문의해주세요:
-
--   **Issues**: [GitHub Issues](https://github.com/YOUR_USERNAME/cherry-back-project/issues)
--   **Discussions**: [GitHub Discussions](https://github.com/YOUR_USERNAME/cherry-back-project/discussions)
-
----
-
-## 🔄 업데이트 로그
-
-### v1.0.0 (2024-12-18)
-
--   초기 릴리즈
--   FastAPI + React 기본 구조
--   LangGraph 기반 AI 워크플로우
--   감정분석 시스템
--   JWT 인증 시스템
-
----
-
-**즐거운 개발하세요! 🚀**
+**⭐ 이 프로젝트가 도움이 되었다면 별표를 눌러주세요!**

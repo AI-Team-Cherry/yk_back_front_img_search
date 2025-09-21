@@ -153,16 +153,6 @@ async def answer_question(
     # 이후 파이프라인 입력은 영어로 (ko→en)
     query = translate_ko2en(query)
 
-    # Mock 모드
-    use_mock_ai = os.getenv("USE_MOCK_AI_RESPONSES", "false").lower() == "true"
-    if use_mock_ai:
-        print("🔵 Mock AI Response Mode: 실제 AI 대신 Mock 응답 사용")
-        metrics = _derive_sales_metrics(mongo_results or [])
-        return {
-            "answer": _fallback_ko(metrics),
-            "insights": "Mock 모드에서 생성된 인사이트입니다.",
-            "recommendations": "Mock 모드에서 생성된 추천사항입니다."
-        }
 
     if "qa_generator" not in ai_model_service.models:
         return {"answer": "⚠️ Q&A 모델이 아직 로딩되지 않았습니다.", "insights": "", "recommendations": ""}

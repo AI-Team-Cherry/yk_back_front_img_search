@@ -30,7 +30,7 @@ export interface ChartData {
 export const getKPIs = async (): Promise<KPIData> => {
   try {
     const token = localStorage.getItem('token');
-    const response = await axios.get(`${API_BASE_URL}/analytics/kpis`, {
+    const response = await axios.get(`${API_BASE_URL}/api/analytics/kpis`, {
       headers: {
         'Authorization': `Bearer ${token}`,
       },
@@ -49,7 +49,7 @@ export const getSalesByDepartment = async (from?: string, to?: string): Promise<
     if (from) params.from = from;
     if (to) params.to = to;
     
-    const response = await axios.get(`${API_BASE_URL}/analytics/sales-by-dept`, {
+    const response = await axios.get(`${API_BASE_URL}/api/analytics/sales-by-dept`, {
       params,
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -73,7 +73,7 @@ export const getTimeSeriesData = async (
     if (from) params.from = from;
     if (to) params.to = to;
     
-    const response = await axios.get(`${API_BASE_URL}/analytics/timeseries`, {
+    const response = await axios.get(`${API_BASE_URL}/api/analytics/timeseries`, {
       params,
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -92,7 +92,7 @@ export const getChartData = async (
 ): Promise<ChartData> => {
   try {
     const token = localStorage.getItem('token');
-    const response = await axios.get(`${API_BASE_URL}/visualization/chart`, {
+    const response = await axios.get(`${API_BASE_URL}/api/visualization/chart`, {
       params: { type, metric },
       headers: {
         'Authorization': `Bearer ${token}`,

@@ -48,14 +48,12 @@ import {
   Share as ShareIcon,
 } from '@mui/icons-material';
 import axios from 'axios';
-import { mockAnalysisResponses, simulateAnalysisProgress } from '../mockData/analysisResponses';
 import { submitQuery, shareAnalysis, saveAnalysis } from '../services/analytics';
 import { VegaEmbed } from 'react-vega';
 import ReactMarkdown from 'react-markdown';
 import { exportAnalysisToPDF } from '../utils/pdfExport';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
-const USE_MOCK_DATA = process.env.REACT_APP_USE_MOCK_DATA === 'true';
 
 interface Dataset {
   id: string;
@@ -175,49 +173,6 @@ const IntegratedAnalysisPage: React.FC = () => {
     setLoading(true);
     setError(null);
 
-    // Mock 모드일 때는 시뮬레이션 시작
-    if (USE_MOCK_DATA) {
-      console.log('🔵 Mock Mode: 고급 분석 시작', { analysisQuestion });
-      
-      setTabValue(2); // 진행 상황 탭으로 이동
-      
-      // 분석 진행 상태 시뮬레이션
-      simulateAnalysisProgress((status) => {
-        setCurrentAnalysis(status);
-        
-        if (status.status === 'completed' && status.result) {
-          setTabValue(3); // 결과 보기 탭으로 이동
-          
-          // Mock 결과를 AnalysisResult 형식으로 변환
-          const mockResult: AnalysisResult = {
-            analysis_id: status.analysis_id,
-            question: analysisQuestion,
-            final_report: status.result.analysis,
-            analysis_summary: {
-              total_steps: 5,
-              final_score: 9.2,
-              execution_time: '15.3s',
-              report_length: '1250 words'
-            },
-            reflection_history: [
-              { step: 1, score: 7.5, improvement: '초기 분석 완료' },
-              { step: 2, score: 8.2, improvement: '데이터 패턴 발견' },
-              { step: 3, score: 8.8, improvement: '인사이트 도출' },
-              { step: 4, score: 9.0, improvement: '추천사항 개선' },
-              { step: 5, score: 9.2, improvement: '최종 검토 완료' }
-            ],
-            data_summary: '해당 데이터셋에서 1,000개의 레코드를 분석했습니다.',
-            created_at: new Date().toISOString()
-          };
-          
-          setSelectedResult(mockResult);
-          setAnalysisHistory(prev => [mockResult, ...prev]);
-        }
-      });
-      
-      setLoading(false);
-      return;
-    }
 
     try {
       const request = {
@@ -300,12 +255,6 @@ const IntegratedAnalysisPage: React.FC = () => {
   };
 
   const checkAnalysisStatus = async (analysisId: string) => {
-    // Mock 모드일 때는 시뮬레이션 데이터 사용
-    if (USE_MOCK_DATA) {
-      // Mock 모드에서는 analysisId를 무시하고 진행 상태를 시뮬레이션
-      return;
-    }
-    
     try {
       const response = await axios.get(`${API_BASE_URL}/analysis/status/${analysisId}`);
       const status: AnalysisStatus = response.data;

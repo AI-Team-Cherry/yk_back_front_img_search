@@ -13,6 +13,7 @@ import AnalysisDetailPage from './pages/AnalysisDetailPage';
 import SettingsPage from './pages/SettingsPage';
 import LoadingPage from './components/LoadingPage';
 import ImageSearchPage from './pages/ImageSearchPage';
+import FashionModelingPage from './pages/FashionModelingPage';
 import BoardChatPage from "./pages/BoardChatPage";
 import BoardListPage from './pages/BoardListPage';
 import BoardFormPage from './pages/BoardFormPage';
@@ -78,6 +79,7 @@ function App() {
               <Route path="dashboard" element={<DraggableDashboardPage />} />
               <Route path="analysis" element={<SmartAnalysisPage />} />
               <Route path="image-search" element={<ImageSearchPage />} />
+              <Route path="fashion-modeling" element={<FashionModelingPage />} />
               <Route path="board-chat" element={<BoardChatPage />} />
               <Route path="boards/:department" element={<BoardListPage />} />
               <Route path="boards/:department/new" element={<BoardFormPage />} />
