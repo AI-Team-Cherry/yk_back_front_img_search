@@ -1,4 +1,3 @@
-// frontend/src/services/boardChat.ts
 import axios, { AxiosError } from "axios";
 
 const BASE_URL =
@@ -7,7 +6,11 @@ const BASE_URL =
 export type Department = "MD" | "CS" | "SW" | string;
 
 export interface BoardChatResult {
-  answer: string;
+  status: string;   // ✅ 백엔드 응답 status
+  answer: string;   // ✅ Colab/백엔드에서 정제된 답변
+  query?: string;   // 사용자가 보낸 질문
+  department?: string; // 선택한 부서
+  postLink?: string;   // ✅ 관련 게시글 링크
   retrieved?: Array<{ id?: string; title?: string; score?: number }>;
 }
 

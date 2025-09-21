@@ -10,10 +10,12 @@ import {
 } from "@mui/material";
 import ChatMessageBubble from "../components/ChatMessageBubble";
 import { sendBoardChat } from "../services/boardChat";
+import { useNavigate } from "react-router-dom";
 
 interface Message {
   sender: "user" | "bot";
   text: string;
+  postLink?: string; // 🔹 게시글 링크
 }
 
 const BoardChatPage: React.FC = () => {
@@ -22,6 +24,7 @@ const BoardChatPage: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   // 스크롤 자동 내려가기
   useEffect(() => {
@@ -39,16 +42,18 @@ const BoardChatPage: React.FC = () => {
 
     try {
       const res = await sendBoardChat(question, department);
-
-      // 🔹 응답 구조 확인 (디버깅)
       console.log("📌 BoardChat API 응답:", res);
-      const r: any = res;
 
-      // 🔹 answer가 없을 경우 다른 필드도 fallback
-      const answer =
-        r.answer || r.result || r.message || "⚠️ 응답에 answer 없음";
+      const answer: string =
+        res.answer && res.answer.length > 0
+          ? res.answer
+          : "⚠️ 답변을 가져오지 못했습니다.";
+      const postLink: string | undefined = res.postLink || undefined;
 
-      setMessages((prev) => [...prev, { sender: "bot", text: answer }]);
+      setMessages((prev) => [
+        ...prev,
+        { sender: "bot", text: answer, postLink },
+      ]);
     } catch (err: any) {
       console.error("❌ BoardChat API 에러:", err);
       setMessages((prev) => [
@@ -89,7 +94,22 @@ const BoardChatPage: React.FC = () => {
         sx={{ bgcolor: "#fafafa" }}
       >
         {messages.map((msg, idx) => (
-          <ChatMessageBubble key={idx} sender={msg.sender} text={msg.text} />
+          <Box key={idx} mb={1}>
+            <ChatMessageBubble sender={msg.sender} text={msg.text} />
+            {/* 🔹 답변 메시지에 postLink가 있으면 버튼 표시 */}
+            {msg.sender === "bot" && msg.postLink && (
+              <Button
+                size="small"
+                variant="outlined"
+                sx={{ mt: 1 }}
+                onClick={() => {
+                  if (msg.postLink) navigate(msg.postLink);
+                }}
+              >
+                관련 게시글 보기
+              </Button>
+            )}
+          </Box>
         ))}
         {loading && (
           <Box display="flex" justifyContent="flex-start" mb={1}>
