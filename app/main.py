@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import auth, ingest, query, result, debug, analytics, report_generator, visualization, integrated_system, images , llm_analysis, collections
+from app.api.routes import auth, ingest, query, result, debug, analytics, report_generator, visualization, integrated_system, images , llm_analysis, boards, llm_board_chat, collections
 from app.services.ai_model_service import ai_model_service
 
 # Load environment variables
@@ -39,6 +39,8 @@ app.include_router(integrated_system.router)
 app.include_router(debug.router)
 app.include_router(images.router, prefix="/api/images", tags=["Images"])
 app.include_router(llm_analysis.router)
+app.include_router(boards.router)
+app.include_router(llm_board_chat.router)
 app.include_router(collections.router, prefix="/api", tags=["Collections"])
 
 # Health check 엔드포인트
@@ -49,6 +51,8 @@ async def health_check():
 @app.get("/")
 async def root():
     return {"message": "Musinsa AI Backend API", "status": "running"}
+
+
 
 @app.on_event("startup")
 async def startup_event():

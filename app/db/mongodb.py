@@ -1,9 +1,10 @@
 from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from datetime import datetime
-from pymongo import ReturnDocument
+from pymongo import ReturnDocument, MongoClient, ASCENDING, DESCENDING
 from app.core.config import MONGO_URI, DB_NAME
 from bson import ObjectId
 from typing import Optional
+import os
 
 
 client = AsyncIOMotorClient(MONGO_URI)
@@ -65,8 +66,21 @@ def to_plain_dict(doc):
             out[k] = v
     return out
 
+def init_indexes():
+    try:
+        db.boards.create_index([("department", ASCENDING)])
+        db.boards.create_index([("created_at", DESCENDING)])
+        db.board_vectors.create_index([("department", ASCENDING)])
+        print("✅ MongoDB indexes created")
+    except Exception as e:
+        print("❌ Index creation error:", e)
+
+init_indexes()
+
 async def get_collection(name: str):
     """
     MongoDB 컬렉션 핸들을 반환
     """
     return db[name]
+
+    

@@ -1,13 +1,23 @@
 from fastapi import APIRouter, Body
-from fastapi.responses import JSONResponse
-import requests, os
+from fastapi.responses import JSONResponse, StreamingResponse
+import requests, os, io, base64, datetime
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet
+import vl_convert as vlc  # ✅ Vega-Lite 변환
+from app.services.report_service import build_analysis_report
+import io
 
 router = APIRouter(prefix="/llm-analysis", tags=["LLMAnalysis"])
 
-# Colab ngrok 주소 (환경변수로 관리 - ngrok 주소는 재시작시마다 변경됨)
-COLAB_BASE_URL = os.getenv("COLAB_BASE_URL", "")
-COLAB_LLM_API = f"{COLAB_BASE_URL}/analyze" if COLAB_BASE_URL else "https://your-ngrok-address.ngrok-free.app/analyze"
 
+# ✅ Colab ngrok 주소 (환경변수로 관리 권장)
+COLAB_BASE_URL = os.getenv("COLAB_BASE_URL")
+COLAB_LLM_API = f"{COLAB_BASE_URL}/analyze"
+
+
+# ========================
+# 🔹 1. Colab 프록시 분석 API
+# ========================
 @router.post("/analyze")
 def analyze(payload: dict = Body(...)):
     question = payload.get("query")
@@ -28,47 +38,55 @@ def analyze(payload: dict = Body(...)):
         return JSONResponse({"status": "error", "message": "Query too long (max 2000 characters)"}, status_code=400)
 
     try:
-        # COLAB_BASE_URL 확인
-        print(f"[LLM] COLAB_BASE_URL: {COLAB_BASE_URL}")
-        print(f"[LLM] COLAB_LLM_API: {COLAB_LLM_API}")
+        res = requests.post(COLAB_LLM_API, json={"query": question}, timeout=6000)
 
-        if not COLAB_BASE_URL:
-            print("[LLM] ERROR: COLAB_BASE_URL is not set!")
-            return JSONResponse({"status": "error", "message": "COLAB_BASE_URL not configured"}, status_code=503)
+        print("=== [LLM 요청 질문] ===", question)
+        print("=== [Colab 응답 상태] ===", res.status_code)
 
-        # 안전한 요청 헤더 추가
-        headers = {
-            "Content-Type": "application/json",
-            "User-Agent": "Musinsa-AI-Backend/1.0"
+        try:
+            colab_json = res.json()
+        except Exception:
+            return JSONResponse(
+                {"status": "error", "message": f"Colab 응답 실패: {res.text}"},
+                status_code=res.status_code
+            )
+
+        print("=== [Colab 응답 JSON] ===", colab_json)
+
+        # ✅ Colab 응답에서 핵심 필드만 추출 & 정제
+        refined = {
+            "status": colab_json.get("status", "error"),
+            "query": colab_json.get("query"),
+            "answer": colab_json.get("ai_analysis", {}).get("answer", ""),
+            "insights": colab_json.get("ai_analysis", {}).get("insights", ""),
+            "recommendations": colab_json.get("ai_analysis", {}).get("recommendations", ""),
+            "data_classes": colab_json.get("ai_analysis", {}).get("data_classes", {}),
+            "statistics": colab_json.get("ai_analysis", {}).get("statistics", {}),
+            "correlations": colab_json.get("ai_analysis", {}).get("correlations", {}),
+            "nonlinear_patterns": colab_json.get("ai_analysis", {}).get("nonlinear_patterns", ""),
+            "mongodb_results": colab_json.get("mongodb_results", {}),
+            "vector_results": colab_json.get("vector_results", {}),
+            "visualizations": colab_json.get("visualizations", []),
+            "report": colab_json.get("report", {}),
         }
 
-        # 페이로드에 컬렉션 정보 추가
-        request_payload = {"query": question}
-        if collections:
-            request_payload["collections"] = collections
+        return JSONResponse(refined, status_code=res.status_code)
 
-        print(f"[LLM] Sending request to: {COLAB_LLM_API}")
-        print(f"[LLM] Payload: {request_payload}")
-
-        res = requests.post(
-            COLAB_LLM_API,
-            json=request_payload,
-            timeout=120,  # 타임아웃 연장 (Colab 응답 시간 고려)
-            headers=headers
-        )
-
-        # 로깅 개선 (민감정보 제외)
-        print(f"[LLM] Request sent, status: {res.status_code}")
-        if res.status_code != 200:
-            print(f"[LLM] Response text: {res.text}")
-
-        if res.status_code == 200:
-            return JSONResponse(res.json(), status_code=res.status_code)
-        else:
-            return JSONResponse({"status": "error", "message": f"External service error: {res.status_code}"}, status_code=502)
-
-    except requests.exceptions.Timeout:
-        return JSONResponse({"status": "error", "message": "Request timeout"}, status_code=504)
     except Exception as e:
-        print(f"[ERROR] LLM request error: {type(e).__name__}")
-        return JSONResponse({"status": "error", "message": "Internal server error"}, status_code=500)
+        print("❌ LLM 요청 에러:", str(e))
+        return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
+# ========================
+# 🔹 2. PDF 리포트 생성 API
+# ========================
+
+@router.post("/report")
+async def generate_report(result: dict):
+    pdf_bytes = build_analysis_report(result)
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=analysis_report.pdf"},
+    )
+

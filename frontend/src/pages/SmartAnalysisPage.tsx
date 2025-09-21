@@ -8,7 +8,6 @@ import {
   Button,
   Grid,
   Chip,
-  Paper,
   Divider,
   Alert,
   CircularProgress,
@@ -16,9 +15,14 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  IconButton,
   Fade,
   LinearProgress,
+  Table,
+  TableHead,
+  TableBody,
+  TableRow,
+  TableCell,
+  Avatar,
 } from "@mui/material";
 import {
   Psychology,
@@ -28,24 +32,184 @@ import {
   QueryStats,
   AutoAwesome,
   Refresh,
-  ContentCopy,
   Download,
+  ContentCopy,
   Share,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
-import { getAnalysisResults, QueryResponse } from "../services/aiQuery";
-import { submitQuery, saveAnalysis } from "../services/analytics";
-import { AnalysisResult as MLAnalysisResult } from "../types";
+import { getAnalysisResults } from "../services/aiQuery";
 import { VegaEmbed } from "react-vega";
 import ReactMarkdown from "react-markdown";
 import { exportAnalysisToPDF } from "../utils/pdfExport";
 import CollectionSelector from "../components/Collections/CollectionSelector";
 
+
+// ✅ Mongo 결과 테이블
+const renderMongoTable = (docs: any[]) => {
+  if (!docs || docs.length === 0) return null;
+  const sample = docs[0];
+  const keys = Object.keys(sample).filter(
+    (k) => !["_id", "image_files"].includes(k)
+  );
+
+  return (
+    <Card sx={{ mb: 2 }}>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>
+          📊 MongoDB 결과
+        </Typography>
+        <Table size="small">
+          <TableHead>
+            <TableRow>
+              {keys.map((key) => (
+                <TableCell key={key} sx={{ fontWeight: "bold" }}>
+                  {key}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {docs.slice(0, 10).map((row, idx) => (
+              <TableRow key={idx}>
+                {keys.map((key) => (
+                  <TableCell
+                    key={key}
+                    align={typeof row[key] === "number" ? "right" : "left"}
+                  >
+                    {key === "main_image" ? (
+                      <Avatar
+                        src={`${process.env.REACT_APP_IMG_URL || ""}/${row[key]}.jpg`}
+                        alt={row.name}
+                        variant="square"
+                        sx={{ width: 40, height: 40 }}
+                      />
+                    ) : (
+                      String(row[key])
+                    )}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+};
+
+// ✅ 기초 통계
+const renderStatistics = (statistics: any) => {
+  if (!statistics || Object.keys(statistics).length === 0) return null;
+  return (
+    <Card sx={{ mb: 2 }}>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>
+          📈 기초 통계
+        </Typography>
+        {Object.entries(statistics).map(([col, stats]: any) => (
+          <Box key={col} sx={{ mb: 2 }}>
+            <Typography variant="subtitle2">{col}</Typography>
+            <Table size="small">
+              <TableBody>
+                {Object.entries(stats).map(([k, v]) => (
+                  <TableRow key={k}>
+                    <TableCell>{k}</TableCell>
+                    <TableCell align="right">
+                      {Number(v).toFixed?.(2) ?? v}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Box>
+        ))}
+      </CardContent>
+    </Card>
+  );
+};
+
+// ✅ 데이터 클래스
+const renderDataClasses = (data_classes: any) => {
+  if (!data_classes || Object.keys(data_classes).length === 0) return null;
+  return (
+    <Card sx={{ mb: 2 }}>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>
+          📂 데이터 클래스
+        </Typography>
+        {Object.entries(data_classes).map(([field, values]: any) => (
+          <Box key={field} sx={{ mb: 1 }}>
+            <Typography variant="subtitle2">{field}</Typography>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+              {values.slice(0, 10).map((val: string, idx: number) => (
+                <Chip key={idx} label={val} variant="outlined" />
+              ))}
+            </Box>
+          </Box>
+        ))}
+      </CardContent>
+    </Card>
+  );
+};
+
+// ✅ 상관관계 히트맵
+const renderCorrelationHeatmap = (correlations: any) => {
+  if (!correlations || Object.keys(correlations).length === 0) return null;
+
+  const fields = Object.keys(correlations);
+  const values: any[] = [];
+
+  fields.forEach((row) => {
+    fields.forEach((col) => {
+      values.push({
+        row,
+        col,
+        value: correlations[row]?.[col] ?? 0,
+      });
+    });
+  });
+
+  const spec = {
+    $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+    description: "Correlation Heatmap",
+    data: { values },
+    mark: "rect",
+    width: 400,
+    height: 400,
+    encoding: {
+      x: { field: "col", type: "ordinal", sort: fields },
+      y: { field: "row", type: "ordinal", sort: fields },
+      color: {
+        field: "value",
+        type: "quantitative",
+        scale: { domain: [-1, 1], scheme: "redblue" },
+      },
+      tooltip: [
+        { field: "row", type: "ordinal" },
+        { field: "col", type: "ordinal" },
+        { field: "value", type: "quantitative", format: ".2f" },
+      ],
+    },
+  };
+
+  return (
+    <Card sx={{ mb: 2 }}>
+      <CardContent>
+        <Typography variant="h6" gutterBottom>
+          🔗 상관관계 히트맵
+        </Typography>
+        <VegaEmbed spec={spec} options={{ actions: false }} />
+      </CardContent>
+    </Card>
+  );
+};
+
+
 const SmartAnalysisPage: React.FC = () => {
   const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [result, setResult] = useState<QueryResponse | MLAnalysisResult | null>(null);
+  const [result, setResult] = useState<any | null>(null);
   const [recentQueries, setRecentQueries] = useState<any[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
@@ -54,11 +218,11 @@ const SmartAnalysisPage: React.FC = () => {
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
 
   const suggestedQueries = [
-    "신규 가입자 중에서 30일 안에 첫 구매할 확률 높은 사람들 리스트 뽑아줘",
-    "이탈 위험 높은데 쿠폰 주면 돌아올 확률 큰 고객만 골라줘",
-    "이번 주에 상의/하의 각 5% 가격 인하하면 예측 판매량이 얼마나 늘까?",
-    "장바구니에 담고 나간 사람 중 48시간 내 결제할 가능성 높은 사용자만 알려줘",
-    "브랜드 신뢰도가 높아 재구매로 이어질 확률 큰 브랜드 톱5는 어디야?",
+    "최근 한 달간 가장 인기있는 상품 카테고리는?",
+    "브랜드별 매출 상위 10개 보여줘",
+    "리뷰 평점이 가장 높은 상품은?",
+    "지난주에 조회수가 급증한 상품은?",
+    "반품률이 높은 카테고리는?",
   ];
 
   useEffect(() => {
@@ -139,132 +303,44 @@ const SmartAnalysisPage: React.FC = () => {
 
   const handleSuggestedQuery = async (suggestedQuery: string) => {
     setQuery(suggestedQuery);
-    setIsLoading(true);
-    setError(null);
-    setResult(null);
-
-    const progressInterval = setInterval(() => {
-      setProgress((prev) => Math.min(prev + Math.random() * 15, 90));
-    }, 500);
-
-    try {
-      console.log("🚀 추천 질의 실행:", suggestedQuery);
-      console.log("📊 선택된 컬렉션들:", selectedCollections);
-
-      // LLM 분석 API 직접 호출 (컬렉션 정보 포함)
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${process.env.REACT_APP_API_URL || "http://localhost:8001"}/llm-analysis/analyze`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            query: suggestedQuery,
-            collections: selectedCollections
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`LLM 요청 실패: ${response.status}`);
-      }
-
-      const data = await response.json();
-      console.log("📊 추천 질의 응답:", data);
-      setResult(data);
-      setProgress(100);
-
-      if (user?.id) {
-        const newQuery = {
-          id: Date.now().toString(),
-          userId: user.id,
-          query: suggestedQuery,
-          result: response,
-          createdAt: new Date().toISOString(),
-          isPublic: false,
-          tags: [],
-        };
-        setRecentQueries((prev) => [newQuery, ...prev.slice(0, 4)]);
-      }
-
-      setQuery("");
-    } catch (error: any) {
-      setError(error.message || "AI 분석 중 오류가 발생했습니다.");
-      setProgress(0);
-    } finally {
-      clearInterval(progressInterval);
-      setIsLoading(false);
-    }
+    handleSubmit();
   };
-
-  const copyToClipboard = (text: string) => navigator.clipboard.writeText(text);
 
   const handleDownloadPDF = async () => {
     if (!result) return;
     try {
-      await exportAnalysisToPDF(
+      const response = await fetch(
+        `${process.env.REACT_APP_API_URL || "http://localhost:8000"}/llm-analysis/report`,
         {
-          query: query || "분석 결과",
-          result: result as MLAnalysisResult,
-          title: query || "분석 결과",
-          createdAt: new Date(),
-        },
-        "analysis-result-visualization"
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(result),
+        }
       );
-    } catch (error) {
-      console.error("PDF 다운로드 오류:", error);
+      if (!response.ok) throw new Error("PDF 생성 실패");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "analysis_report.pdf");
+      document.body.appendChild(link);
+      link.click();
+    } catch (err) {
+      console.error("PDF 다운로드 오류:", err);
       setError("PDF 다운로드 중 오류가 발생했습니다.");
     }
   };
 
-  const formatDate = (dateString: string) => new Date(dateString).toLocaleString("ko-KR");
-
-  const handleShareAnalysis = async () => {
-    if (!result || !user?.id) return;
-    setShareLoading(true);
-    try {
-      await saveAnalysis({
-        query: query || "분석 결과",
-        result: result as MLAnalysisResult,
-        title: query || "분석 결과",
-        description: "스마트 AI 분석 결과",
-        tags: ["AI분석", "공유"],
-        isPublic: true,
-      });
-      setShareSuccess(true);
-      setTimeout(() => setShareSuccess(false), 3000);
-    } catch (error) {
-      console.error("분석 공유 중 오류:", error);
-      setError("분석 공유 중 오류가 발생했습니다.");
-    } finally {
-      setShareLoading(false);
-    }
+  const copyToClipboard = () => {
+    if (!result) return;
+    navigator.clipboard.writeText(JSON.stringify(result, null, 2));
   };
 
-  const renderResultSection = (title: string, content: any, icon: React.ReactNode) => {
-    if (!content) return null;
-    return (
-      <Card sx={{ mb: 2 }}>
-        <CardContent>
-          <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-            {icon}
-            <Typography variant="h6" sx={{ ml: 1 }}>
-              {title}
-            </Typography>
-          </Box>
-          <Paper sx={{ p: 2, bgcolor: "background.default" }}>
-            <pre style={{ whiteSpace: "pre-wrap", fontSize: "14px" }}>
-              {typeof content === "string" ? content : JSON.stringify(content, null, 2)}
-            </pre>
-          </Paper>
-        </CardContent>
-      </Card>
-    );
+  const handleShareAnalysis = () => {
+    if (!result) return;
+    alert("공유 기능은 곧 추가됩니다!");
   };
-
   // MongoDB 결과 전용 렌더링 함수
   const renderMongoResults = (data: any[]) => {
     if (!data || !Array.isArray(data) || data.length === 0) return null;
@@ -360,12 +436,18 @@ const SmartAnalysisPage: React.FC = () => {
       </Card>
     );
   };
+  const formatDate = (dateString: string) =>
+    new Date(dateString).toLocaleString("ko-KR");
 
   return (
     <Box sx={{ p: 3 }}>
       {/* 헤더 */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" gutterBottom sx={{ display: "flex", alignItems: "center" }}>
+        <Typography
+          variant="h4"
+          gutterBottom
+          sx={{ display: "flex", alignItems: "center" }}
+        >
           <Psychology sx={{ mr: 2, color: "primary.main" }} />
           스마트 AI 분석
         </Typography>
@@ -377,10 +459,13 @@ const SmartAnalysisPage: React.FC = () => {
       <Grid container spacing={3}>
         {/* 질의 입력 */}
         <Grid item xs={12} md={8}>
-          {/* 입력 */}
           <Card sx={{ mb: 3 }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ display: "flex", alignItems: "center" }}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{ display: "flex", alignItems: "center" }}
+              >
                 <QueryStats sx={{ mr: 1 }} />
                 AI에게 질문하기
                 {selectedCollections.length > 0 && (
@@ -408,7 +493,7 @@ const SmartAnalysisPage: React.FC = () => {
                 fullWidth
                 multiline
                 rows={3}
-                placeholder="예: 최근 한 달간 가장 인기있는 상품 카테고리는 무엇인가요?"
+                placeholder="예: 최근 한 달간 가장 인기있는 상품 카테고리는?"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 sx={{ mb: 2 }}
@@ -416,7 +501,11 @@ const SmartAnalysisPage: React.FC = () => {
               />
               {isLoading && (
                 <Box sx={{ mb: 2 }}>
-                  <Typography variant="body2" color="textSecondary" gutterBottom>
+                  <Typography
+                    variant="body2"
+                    color="textSecondary"
+                    gutterBottom
+                  >
                     AI가 데이터를 분석하고 있습니다... {Math.round(progress)}%
                   </Typography>
                   <LinearProgress variant="determinate" value={progress} />
@@ -425,14 +514,21 @@ const SmartAnalysisPage: React.FC = () => {
               <Box sx={{ display: "flex", gap: 2 }}>
                 <Button
                   variant="contained"
-                  startIcon={isLoading ? <CircularProgress size={20} /> : <Send />}
+                  startIcon={
+                    isLoading ? <CircularProgress size={20} /> : <Send />
+                  }
                   onClick={handleSubmit}
                   disabled={!query.trim() || isLoading}
                   sx={{ px: 4 }}
                 >
                   {isLoading ? "분석 중..." : "분석 시작"}
                 </Button>
-                <Button variant="outlined" startIcon={<Refresh />} onClick={() => setQuery("")} disabled={isLoading}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Refresh />}
+                  onClick={() => setQuery("")}
+                  disabled={isLoading}
+                >
                   초기화
                 </Button>
               </Box>
@@ -442,7 +538,11 @@ const SmartAnalysisPage: React.FC = () => {
           {/* 추천 질의 */}
           <Card sx={{ mb: 3 }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom sx={{ display: "flex", alignItems: "center" }}>
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{ display: "flex", alignItems: "center" }}
+              >
                 <AutoAwesome sx={{ mr: 1 }} />
                 추천 질의
               </Typography>
@@ -463,61 +563,184 @@ const SmartAnalysisPage: React.FC = () => {
 
           {/* 결과 */}
           {result && (
-            <Fade in={true}>
-              <Card>
-                <CardContent>
-                  <Typography variant="h6" gutterBottom>
-                    분석 결과
-                  </Typography>
-
-                  {renderResultSection("AI 분석 (Answer)", (result as any).ai_analysis?.answer, <TrendingUp />)}
-                  {renderResultSection("AI 인사이트 (Insights)", (result as any).ai_analysis?.insights, <Psychology />)}
-                  {renderResultSection("AI 추천 (Recommendations)", (result as any).ai_analysis?.recommendations, <AutoAwesome />)}
-
-                  {/* MongoDB 결과를 새로운 형식으로 표시 */}
-                  {renderMongoResults((result as any).mongodb_results?.data)}
-
-                  {/* Vector 검색 결과를 새로운 형식으로 표시 */}
-                  {renderVectorResults((result as any).vector_results)}
-
-                  {/* ✅ Vega-Lite 시각화 */}
-{(result as any).visualizations &&
-  (result as any).visualizations.length > 0 && (
-    <Card sx={{ mb: 2 }}>
+  <Fade in>
+    <Card>
       <CardContent>
         <Typography variant="h6" gutterBottom>
-          시각화 결과
+          분석 결과
         </Typography>
-        {(result as any).visualizations.map((viz: any, idx: number) => (
-          <Box key={idx} sx={{ mb: 3 }}>
-            <Typography variant="subtitle1" gutterBottom>
-              {viz.title || `Visualization ${idx + 1}`}
+
+{/* ✅ 디버깅 JSON */}
+<Box
+  sx={{
+    mb: 2,
+    p: 2,
+    bgcolor: "#1e1e1e",
+    borderRadius: 2,
+    color: "#dcdcdc",
+  }}
+>
+  <Box
+    sx={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      mb: 1,
+    }}
+  >
+    <Typography variant="subtitle2" sx={{ color: "#00e5ff" }}>
+      [DEBUG] Raw Result JSON
+    </Typography>
+
+    <Box sx={{ display: "flex", gap: 1, flexShrink: 0 }}>
+      <Button
+        variant="contained"
+        color="primary"
+        startIcon={<ContentCopy />}
+        onClick={copyToClipboard}
+        sx={{ minWidth: 100 }}
+      >
+        복사
+      </Button>
+      <Button
+        variant="contained"
+        color="secondary"
+        startIcon={<Share />}
+        onClick={handleShareAnalysis}
+        sx={{ minWidth: 100 }}
+      >
+        공유
+      </Button>
+      <Button
+        variant="outlined"
+        color="inherit"
+        startIcon={<Download />}
+        onClick={() => {
+          const blob = new Blob([JSON.stringify(result, null, 2)], {
+            type: "application/json",
+          });
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.setAttribute("download", "analysis_result.json");
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        }}
+        sx={{ minWidth: 120 }}
+      >
+        JSON
+      </Button>
+      <Button
+        variant="outlined"
+        color="success"
+        startIcon={<Download />}
+        onClick={handleDownloadPDF}
+        sx={{ minWidth: 120 }}
+      >
+        PDF
+      </Button>
+    </Box>
+  </Box>
+
+  <pre
+    style={{
+      maxHeight: 200,
+      overflow: "auto",
+      fontSize: "12px",
+      margin: 0,
+      fontFamily: "monospace",
+      color: "#dcdcdc",
+      background: "transparent",
+    }}
+  >
+    {JSON.stringify(result, null, 2)}
+  </pre>
+</Box>
+
+
+
+        {/* 📌 요약 답변 */}
+        {result.answer && (
+          <Alert severity="success" sx={{ mb: 2 }}>
+            <strong>📌 요약 답변:</strong> {result.answer}
+          </Alert>
+        )}
+
+        {/* 🔍 인사이트 */}
+        {result.insights && (
+          <Alert severity="info" sx={{ mb: 2, whiteSpace: "pre-line" }}>
+            <strong>🔍 인사이트:</strong>
+            <br />
+            {result.insights}
+          </Alert>
+        )}
+
+        {/* 💡 추천 */}
+        {result.recommendations && (
+          <Alert severity="warning" sx={{ mb: 2, whiteSpace: "pre-line" }}>
+            <strong>💡 추천:</strong>
+            <br />
+            {Array.isArray(result.recommendations)
+              ? result.recommendations.join("\n")
+              : result.recommendations}
+          </Alert>
+        )}
+
+        {/* 📂 데이터 클래스 */}
+        {renderDataClasses(result.data_classes)}
+
+        {/* 📈 기초 통계 */}
+        {renderStatistics(result.statistics)}
+
+        {/* 🔗 상관관계 히트맵 */}
+        {renderCorrelationHeatmap(result.correlations)}
+
+        {/* 🌀 비선형 패턴 */}
+        {result.nonlinear_patterns && (
+          <Alert severity="info" sx={{ mb: 2, whiteSpace: "pre-line" }}>
+            <strong>🌀 비선형 패턴:</strong>
+            <br />
+            {result.nonlinear_patterns}
+          </Alert>
+        )}
+
+        {/* 📊 MongoDB 결과 */}
+        {renderMongoTable(result.mongodb_results?.data)}
+
+        {/* 📂 Vector 검색 결과 */}
+        {result.vector_results && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <strong>📂 Vector 검색 결과:</strong>
+            <pre style={{ fontSize: "12px" }}>
+              {JSON.stringify(result.vector_results, null, 2)}
+            </pre>
+          </Alert>
+        )}
+
+        {/* 📈 시각화 */}
+        {result.visualizations?.length > 0 && (
+          <Box sx={{ mt: 3 }}>
+            <Typography variant="h6" gutterBottom>
+              📈 시각화 결과
             </Typography>
-            <VegaEmbed
-              spec={{
-                ...viz,
-                width: 600,
-                height: 400,
-                encoding: {
-                  ...viz.encoding,
-                  // ✅ fallback: metric 없으면 hearts
-                  y: {
-                    field: viz.encoding?.y?.field || "hearts",
-                    type: "quantitative",
-                  },
-                },
-              }}
-              options={{ actions: false }}
-            />
-          </Box>
-        ))}
-      </CardContent>
-    </Card>
-  )}
+            {result.visualizations.map((viz: any, idx: number) => (
+              <Card key={idx} sx={{ mb: 2 }}>
+                <CardContent>
+                  <VegaEmbed
+                    spec={{ ...viz, width: 600, height: 400 }}
+                    options={{ actions: false }}
+                  />
                 </CardContent>
               </Card>
-            </Fade>
-          )}
+            ))}
+          </Box>
+        )}
+      </CardContent>
+    </Card>
+  </Fade>
+)}
+
         </Grid>
 
         {/* 컬렉션 선택 패널 */}
