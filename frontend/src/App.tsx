@@ -13,6 +13,7 @@ import AnalysisDetailPage from './pages/AnalysisDetailPage';
 import SettingsPage from './pages/SettingsPage';
 import LoadingPage from './components/LoadingPage';
 import ImageSearchPage from './pages/ImageSearchPage';
+import FashionModelingPage from './pages/FashionModelingPage';
 
 
 // Protected Route component
@@ -74,6 +75,7 @@ function App() {
               <Route path="dashboard" element={<DraggableDashboardPage />} />
               <Route path="analysis" element={<SmartAnalysisPage />} />
               <Route path="image-search" element={<ImageSearchPage />} />
+              <Route path="fashion-modeling" element={<FashionModelingPage />} />
               <Route path="mypage" element={<MyPage />} />
               <Route path="shared" element={<SharedAnalysesPage />} />
               <Route path="analysis/:id" element={<AnalysisDetailPage />} />

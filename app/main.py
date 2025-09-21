@@ -1,7 +1,11 @@
+from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import auth, ingest, query, result, debug, analytics, report_generator, visualization, integrated_system, images , llm_analysis, collections
 from app.services.ai_model_service import ai_model_service
+
+# Load environment variables
+load_dotenv()
 
 app = FastAPI(
     title="Musinsa AI Backend",
