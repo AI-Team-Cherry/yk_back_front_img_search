@@ -62,6 +62,6 @@ uploads/*
 !uploads/.gitkeep
 
 # Large data files (AI models, embeddings, images)
-app/img_search/
+app/img_search/only_product_images/
 *.csv
 *.zip
