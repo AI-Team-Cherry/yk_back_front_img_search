@@ -1,13 +1,22 @@
 from fastapi import APIRouter, Body
-from fastapi.responses import JSONResponse
-import requests, os
+from fastapi.responses import JSONResponse, StreamingResponse
+import requests, os, io, base64, datetime
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+from reportlab.lib.styles import getSampleStyleSheet
+import vl_convert as vlc  # ✅ Vega-Lite 변환
+from app.services.report_service import build_analysis_report
+import io
 
 router = APIRouter(prefix="/llm-analysis", tags=["LLMAnalysis"])
 
-# Colab ngrok 주소 (환경변수로 관리 권장)
+# ✅ Colab ngrok 주소 (환경변수로 관리 권장)
 COLAB_BASE_URL = os.getenv("COLAB_BASE_URL")
 COLAB_LLM_API = f"{COLAB_BASE_URL}/analyze"
 
+
+# ========================
+# 🔹 1. Colab 프록시 분석 API
+# ========================
 @router.post("/analyze")
 def analyze(payload: dict = Body(...)):
     question = payload.get("query")
@@ -16,19 +25,53 @@ def analyze(payload: dict = Body(...)):
 
     try:
         res = requests.post(COLAB_LLM_API, json={"query": question}, timeout=6000)
-        
-        # ✅ 응답 내용 로그로 확인
-        print("=== [LLM 요청 질문] ===")
-        print(question)
-        print("=== [Colab 응답 상태] ===")
-        print(res.status_code)
-        print("=== [Colab 응답 JSON] ===")
-        try:
-            print(res.json())
-        except Exception:
-            print(res.text)  # JSON 파싱 실패 시 원문 출력
 
-        return JSONResponse(res.json(), status_code=res.status_code)
+        print("=== [LLM 요청 질문] ===", question)
+        print("=== [Colab 응답 상태] ===", res.status_code)
+
+        try:
+            colab_json = res.json()
+        except Exception:
+            return JSONResponse(
+                {"status": "error", "message": f"Colab 응답 실패: {res.text}"},
+                status_code=res.status_code
+            )
+
+        print("=== [Colab 응답 JSON] ===", colab_json)
+
+        # ✅ Colab 응답에서 핵심 필드만 추출 & 정제
+        refined = {
+            "status": colab_json.get("status", "error"),
+            "query": colab_json.get("query"),
+            "answer": colab_json.get("ai_analysis", {}).get("answer", ""),
+            "insights": colab_json.get("ai_analysis", {}).get("insights", ""),
+            "recommendations": colab_json.get("ai_analysis", {}).get("recommendations", ""),
+            "data_classes": colab_json.get("ai_analysis", {}).get("data_classes", {}),
+            "statistics": colab_json.get("ai_analysis", {}).get("statistics", {}),
+            "correlations": colab_json.get("ai_analysis", {}).get("correlations", {}),
+            "nonlinear_patterns": colab_json.get("ai_analysis", {}).get("nonlinear_patterns", ""),
+            "mongodb_results": colab_json.get("mongodb_results", {}),
+            "vector_results": colab_json.get("vector_results", {}),
+            "visualizations": colab_json.get("visualizations", []),
+            "report": colab_json.get("report", {}),
+        }
+
+        return JSONResponse(refined, status_code=res.status_code)
+
     except Exception as e:
         print("❌ LLM 요청 에러:", str(e))
         return JSONResponse({"status": "error", "message": str(e)}, status_code=500)
+
+
+# ========================
+# 🔹 2. PDF 리포트 생성 API
+# ========================
+
+@router.post("/report")
+async def generate_report(result: dict):
+    pdf_bytes = build_analysis_report(result)
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": "attachment; filename=analysis_report.pdf"},
+    )
