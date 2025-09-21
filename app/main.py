@@ -1,7 +1,10 @@
+import os
+from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import auth, ingest, query, result, debug, analytics, report_generator, visualization, integrated_system, images , llm_analysis
 from app.services.ai_model_service import ai_model_service
+from app.img_search.routes import router as img_search_router
 
 app = FastAPI(
     title="Musinsa AI Backend",
@@ -29,7 +32,13 @@ app.include_router(visualization.router, prefix="/visualization", tags=["Visuali
 app.include_router(integrated_system.router)
 app.include_router(debug.router)
 app.include_router(images.router, prefix="/api/images", tags=["Images"])
+app.include_router(img_search_router, tags=["FashionSearch"])
 app.include_router(llm_analysis.router)
+
+IMG_DIR = os.path.join(os.path.dirname(__file__), "img_search", "only_product_images")  # 수정 photo_search
+if os.path.exists(IMG_DIR):
+    app.mount("/images", StaticFiles(directory=IMG_DIR), name="images")
+# -------
 
 @app.on_event("startup")
 async def startup_event():

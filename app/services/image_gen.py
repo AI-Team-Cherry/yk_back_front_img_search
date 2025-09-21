@@ -9,7 +9,7 @@ from transformers import CLIPProcessor, CLIPModel
 async def generate_image(prompt: str, top: int):
     caption_csv = "app/img_search/caption(fashion-clip)_embedding.csv"
     image_csv   = "app/img_search/image_embedding.csv"
-    image_dir   = "app/img_search/only_product_images"  # ✅ 실제 사용
+    image_dir   = "app/img_search/only_product_images"  
 
     # 1) CSV 로드
     caption_df = pd.read_csv(caption_csv)
