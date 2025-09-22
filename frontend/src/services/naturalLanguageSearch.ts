@@ -1,19 +1,19 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8001';
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8080";
 
 // API 클라이언트 설정
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
 // 요청 인터셉터: 토큰 자동 추가
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -59,28 +59,30 @@ class NaturalLanguageSearchService {
   /**
    * 자연어를 MongoDB 쿼리로 변환
    */
-  async convertQuery(request: NaturalLanguageQueryRequest): Promise<NaturalLanguageQueryResponse> {
+  async convertQuery(
+    request: NaturalLanguageQueryRequest
+  ): Promise<NaturalLanguageQueryResponse> {
     try {
-      const response = await api.post('/query/', {
-        question: request.query
+      const response = await api.post("/query/", {
+        question: request.query,
       });
-      
+
       // cherry_back 응답을 NaturalLanguageQueryResponse 형식으로 변환
       return {
         success: true,
         query: {
-          collection: 'default',
-          operation: 'find',
+          collection: "default",
+          operation: "find",
           filter: {},
-          options: {}
+          options: {},
         },
         results: response.data.data || [],
-        natural_language: request.query
+        natural_language: request.query,
       };
     } catch (error: any) {
-      console.error('쿼리 변환 오류:', error);
+      console.error("쿼리 변환 오류:", error);
       throw new Error(
-        error.response?.data?.detail || '쿼리 변환 중 오류가 발생했습니다.'
+        error.response?.data?.detail || "쿼리 변환 중 오류가 발생했습니다."
       );
     }
   }
@@ -88,28 +90,30 @@ class NaturalLanguageSearchService {
   /**
    * 자연어 검색 실행
    */
-  async search(request: NaturalLanguageQueryRequest): Promise<NaturalLanguageQueryResponse> {
+  async search(
+    request: NaturalLanguageQueryRequest
+  ): Promise<NaturalLanguageQueryResponse> {
     try {
-      const response = await api.post('/query/', {
-        question: request.query
+      const response = await api.post("/query/", {
+        question: request.query,
       });
 
       return {
         success: true,
         query: {
-          collection: request.collection || 'default',
-          operation: 'search',
+          collection: request.collection || "default",
+          operation: "search",
           filter: {},
-          options: {}
+          options: {},
         },
         results: response.data.data || [],
         natural_language: request.query,
-        error: response.data.error
+        error: response.data.error,
       };
     } catch (error: any) {
-      console.error('자연어 검색 오류:', error);
+      console.error("자연어 검색 오류:", error);
       throw new Error(
-        error.response?.data?.detail || '검색 중 오류가 발생했습니다.'
+        error.response?.data?.detail || "검색 중 오류가 발생했습니다."
       );
     }
   }
@@ -126,7 +130,7 @@ class NaturalLanguageSearchService {
       "이번 달 상품별 리뷰 개수",
       "부정적인 리뷰의 평균 평점",
       "어제 등록된 주문 목록",
-      "이번 주 매출 총액"
+      "이번 주 매출 총액",
     ];
   }
 
@@ -142,13 +146,13 @@ class NaturalLanguageSearchService {
       return {
         summary: "검색 결과가 없습니다.",
         details: response.error || "알 수 없는 오류가 발생했습니다.",
-        count: 0
+        count: 0,
       };
     }
 
     const count = response.results.length;
     const query = response.query;
-    
+
     let summary = "";
     let details = "";
 
@@ -164,7 +168,8 @@ class NaturalLanguageSearchService {
       summary = `검색 결과: ${count}개 문서`;
       if (query?.options?.sort) {
         const sortField = Object.keys(query.options.sort)[0];
-        const sortOrder = query.options.sort[sortField] === -1 ? "최신순" : "오래된순";
+        const sortOrder =
+          query.options.sort[sortField] === -1 ? "최신순" : "오래된순";
         details = `${sortField} ${sortOrder} 정렬`;
       }
     }
@@ -191,24 +196,28 @@ class NaturalLanguageSearchService {
 
     // 첫 번째 문서에서 컬럼 추출
     const firstDoc = results[0];
-    const columns = Object.keys(firstDoc).filter(key => key !== '_id');
+    const columns = Object.keys(firstDoc).filter((key) => key !== "_id");
 
     // 행 데이터 변환
-    const rows = results.map(doc => {
+    const rows = results.map((doc) => {
       const row: any = {};
-      columns.forEach(col => {
+      columns.forEach((col) => {
         let value = doc[col];
-        
+
         // 날짜 포맷팅
-        if (value && typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}/)) {
-          value = new Date(value).toLocaleString('ko-KR');
+        if (
+          value &&
+          typeof value === "string" &&
+          value.match(/^\d{4}-\d{2}-\d{2}/)
+        ) {
+          value = new Date(value).toLocaleString("ko-KR");
         }
-        
+
         // 객체나 배열은 JSON 문자열로 변환
-        if (typeof value === 'object' && value !== null) {
+        if (typeof value === "object" && value !== null) {
           value = JSON.stringify(value, null, 2);
         }
-        
+
         row[col] = value;
       });
       return row;

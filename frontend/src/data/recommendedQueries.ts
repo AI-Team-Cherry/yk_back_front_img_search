@@ -1,21 +1,22 @@
-import { AnalysisResult } from '../types';
+import { AnalysisResult } from "../types";
 
 export interface RecommendedQuery {
   id: string;
   title: string;
   description: string;
   category: string;
-  difficulty: 'advanced' | 'expert';
+  difficulty: "advanced" | "expert";
   result: AnalysisResult;
 }
 
 export const recommendedQueries: RecommendedQuery[] = [
   {
-    id: 'new-user-purchase-prediction',
-    title: '신규 가입자 중에서 30일 안에 첫 구매할 확률 높은 사람들 리스트 뽑아줘',
-    description: '신규 가입 고객의 구매 전환 예측 분석',
-    category: '고객 예측 분석',
-    difficulty: 'expert',
+    id: "new-user-purchase-prediction",
+    title:
+      "신규 가입자 중에서 30일 안에 첫 구매할 확률 높은 사람들 리스트 뽑아줘",
+    description: "신규 가입 고객의 구매 전환 예측 분석",
+    category: "고객 예측 분석",
+    difficulty: "expert",
     result: {
       analysis: `## 신규 가입자 30일 내 첫 구매 확률 예측 모델
 
@@ -80,120 +81,144 @@ export const recommendedQueries: RecommendedQuery[] = [
 - 월별 스타일 팁 콘텐츠 제공
 - 특가 이벤트 선발송 (월 1회)
 - **예상 ROI**: 150%`,
-      
+
       visualization: {
-        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-        "title": "Feature Importance: 신규 가입자 첫 구매 예측 모델",
-        "width": 600,
-        "height": 400,
-        "data": {
-          "values": [
-            {"feature": "48h 내 PDP 조회수", "importance": 0.24, "category": "행동"},
-            {"feature": "마케팅 수신동의", "importance": 0.18, "category": "마케팅"},
-            {"feature": "48h 내 세션수", "importance": 0.16, "category": "행동"},
-            {"feature": "유입채널 (organic)", "importance": 0.14, "category": "획득"},
-            {"feature": "연령대 (20-30대)", "importance": 0.12, "category": "인구통계"},
-            {"feature": "장바구니 추가수", "importance": 0.11, "category": "행동"},
-            {"feature": "찜/하트 수", "importance": 0.09, "category": "관심"},
-            {"feature": "웰컴쿠폰 보유", "importance": 0.08, "category": "마케팅"},
-            {"feature": "구독브랜드 수", "importance": 0.06, "category": "관심"},
-            {"feature": "모바일 디바이스", "importance": 0.05, "category": "기술"}
-          ]
-        },
-        "mark": {
-          "type": "bar",
-          "tooltip": true,
-          "cornerRadiusEnd": 4
-        },
-        "encoding": {
-          "y": {
-            "field": "feature",
-            "type": "nominal",
-            "title": "피처",
-            "sort": "-x"
-          },
-          "x": {
-            "field": "importance",
-            "type": "quantitative",
-            "title": "Feature Importance",
-            "scale": {"domain": [0, 0.25]}
-          },
-          "color": {
-            "field": "category",
-            "type": "nominal",
-            "scale": {
-              "domain": ["행동", "마케팅", "획득", "인구통계", "관심", "기술"],
-              "range": ["#dc2626", "#ea580c", "#d97706", "#65a30d", "#16a34a", "#0ea5e9"]
+        $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+        title: "Feature Importance: 신규 가입자 첫 구매 예측 모델",
+        width: 600,
+        height: 400,
+        data: {
+          values: [
+            {
+              feature: "48h 내 PDP 조회수",
+              importance: 0.24,
+              category: "행동",
             },
-            "legend": {"title": "피처 카테고리"}
-          }
-        }
+            {
+              feature: "마케팅 수신동의",
+              importance: 0.18,
+              category: "마케팅",
+            },
+            { feature: "48h 내 세션수", importance: 0.16, category: "행동" },
+            {
+              feature: "유입채널 (organic)",
+              importance: 0.14,
+              category: "획득",
+            },
+            {
+              feature: "연령대 (20-30대)",
+              importance: 0.12,
+              category: "인구통계",
+            },
+            { feature: "장바구니 추가수", importance: 0.11, category: "행동" },
+            { feature: "찜/하트 수", importance: 0.09, category: "관심" },
+            { feature: "웰컴쿠폰 보유", importance: 0.08, category: "마케팅" },
+            { feature: "구독브랜드 수", importance: 0.06, category: "관심" },
+            { feature: "모바일 디바이스", importance: 0.05, category: "기술" },
+          ],
+        },
+        mark: {
+          type: "bar",
+          tooltip: true,
+          cornerRadiusEnd: 4,
+        },
+        encoding: {
+          y: {
+            field: "feature",
+            type: "nominal",
+            title: "피처",
+            sort: "-x",
+          },
+          x: {
+            field: "importance",
+            type: "quantitative",
+            title: "Feature Importance",
+            scale: { domain: [0, 0.25] },
+          },
+          color: {
+            field: "category",
+            type: "nominal",
+            scale: {
+              domain: ["행동", "마케팅", "획득", "인구통계", "관심", "기술"],
+              range: [
+                "#dc2626",
+                "#ea580c",
+                "#d97706",
+                "#65a30d",
+                "#16a34a",
+                "#0ea5e9",
+              ],
+            },
+            legend: { title: "피처 카테고리" },
+          },
+        },
       },
-      
+
       data: [
         {
-          "buyer_id": "USR_2024_001247",
-          "signup_date": "2024-09-10",
-          "p_conv30": 0.92,
-          "top_features": "PDP_48h:23, marketing_opt:1, sessions_48h:8",
-          "segment": "High",
-          "predicted_aov": 78000,
-          "acquisition_channel": "organic"
+          buyer_id: "USR_2024_001247",
+          signup_date: "2024-09-10",
+          p_conv30: 0.92,
+          top_features: "PDP_48h:23, marketing_opt:1, sessions_48h:8",
+          segment: "High",
+          predicted_aov: 78080,
+          acquisition_channel: "organic",
         },
         {
-          "buyer_id": "USR_2024_001248", 
-          "signup_date": "2024-09-10",
-          "p_conv30": 0.87,
-          "top_features": "PDP_48h:18, cart_adds:3, age_group:25-30",
-          "segment": "High",
-          "predicted_aov": 71000,
-          "acquisition_channel": "paid_social"
+          buyer_id: "USR_2024_001248",
+          signup_date: "2024-09-10",
+          p_conv30: 0.87,
+          top_features: "PDP_48h:18, cart_adds:3, age_group:25-30",
+          segment: "High",
+          predicted_aov: 71000,
+          acquisition_channel: "paid_social",
         },
         {
-          "buyer_id": "USR_2024_001249",
-          "signup_date": "2024-09-10",
-          "p_conv30": 0.84,
-          "top_features": "sessions_48h:12, hearts:5, welcome_coupon:1", 
-          "segment": "High",
-          "predicted_aov": 69000,
-          "acquisition_channel": "organic"
+          buyer_id: "USR_2024_001249",
+          signup_date: "2024-09-10",
+          p_conv30: 0.84,
+          top_features: "sessions_48h:12, hearts:5, welcome_coupon:1",
+          segment: "High",
+          predicted_aov: 69000,
+          acquisition_channel: "organic",
         },
         {
-          "buyer_id": "USR_2024_001250",
-          "signup_date": "2024-09-10",
-          "p_conv30": 0.73,
-          "top_features": "PDP_48h:8, marketing_opt:1, mobile_device:1",
-          "segment": "Med",
-          "predicted_aov": 62000,
-          "acquisition_channel": "referral"
+          buyer_id: "USR_2024_001250",
+          signup_date: "2024-09-10",
+          p_conv30: 0.73,
+          top_features: "PDP_48h:8, marketing_opt:1, mobile_device:1",
+          segment: "Med",
+          predicted_aov: 62000,
+          acquisition_channel: "referral",
         },
         {
-          "buyer_id": "USR_2024_001251",
-          "signup_date": "2024-09-10",
-          "p_conv30": 0.68,
-          "top_features": "sessions_48h:4, age_group:20-25, brand_follows:2",
-          "segment": "Med", 
-          "predicted_aov": 58000,
-          "acquisition_channel": "organic"
-        }
+          buyer_id: "USR_2024_001251",
+          signup_date: "2024-09-10",
+          p_conv30: 0.68,
+          top_features: "sessions_48h:4, age_group:20-25, brand_follows:2",
+          segment: "Med",
+          predicted_aov: 58080,
+          acquisition_channel: "organic",
+        },
       ],
-      
+
       model_status: {
         status: "ready",
         model: "RandomForestClassifier (class_weight=balanced)",
-        type: "binary_classification"
+        type: "binary_classification",
       },
-      
-      prediction_basis: "시간누수 차단: 가입일 기준 과거 Cohort로 학습, 최근 Cohort로 검증. buyers ⋈ orders (signup_date+30일 내 first_order_date) 라벨링. 48h 내 행동 피처 + 인구통계 + 마케팅 메타데이터 활용."
-    }
+
+      prediction_basis:
+        "시간누수 차단: 가입일 기준 과거 Cohort로 학습, 최근 Cohort로 검증. buyers ⋈ orders (signup_date+30일 내 first_order_date) 라벨링. 48h 내 행동 피처 + 인구통계 + 마케팅 메타데이터 활용.",
+    },
   },
 
   {
-    id: 'churn-prevention-coupon',
-    title: '이탈 위험 높은데 쿠폰 주면 돌아올 확률 큰 고객만 골라줘',
-    description: '이탈 위험 고객 중 쿠폰 마케팅 효과가 높은 세그먼트 분석',
-    category: '이탈 방지 마케팅',
-    difficulty: 'expert',
+    id: "churn-prevention-coupon",
+    title: "이탈 위험 높은데 쿠폰 주면 돌아올 확률 큰 고객만 골라줘",
+    description: "이탈 위험 고객 중 쿠폰 마케팅 효과가 높은 세그먼트 분석",
+    category: "이탈 방지 마케팅",
+    difficulty: "expert",
     result: {
       analysis: `## 이탈 위험 고객 쿠폰 업리프트 모델 (T-Learner)
 
@@ -286,118 +311,131 @@ export const recommendedQueries: RecommendedQuery[] = [
 - 예상 증분 ROI: 285%`,
 
       visualization: {
-        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-        "title": "Qini Curve: 쿠폰 업리프트 모델 성능",
-        "width": 600,
-        "height": 400,
-        "data": {
-          "values": [
-            {"타겟비율": 0, "누적증분구매": 0, "random_baseline": 0},
-            {"타겟비율": 10, "누적증분구매": 847, "random_baseline": 284},
-            {"타겟비율": 20, "누적증분구매": 1523, "random_baseline": 568},
-            {"타겟비율": 30, "누적증분구매": 2247, "random_baseline": 852},
-            {"타겟비율": 40, "누적증분구매": 2834, "random_baseline": 1136},
-            {"타겟비율": 50, "누적증분구매": 3291, "random_baseline": 1420},
-            {"타겟비율": 60, "누적증분구매": 3642, "random_baseline": 1704},
-            {"타겟비율": 70, "누적증분구매": 3918, "random_baseline": 1988},
-            {"타겟비율": 80, "누적증분구매": 4124, "random_baseline": 2272},
-            {"타겟비율": 90, "누적증분구매": 4287, "random_baseline": 2556},
-            {"타겟비율": 100, "누적증분구매": 4420, "random_baseline": 2840}
-          ]
+        $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+        title: "Qini Curve: 쿠폰 업리프트 모델 성능",
+        width: 600,
+        height: 400,
+        data: {
+          values: [
+            { 타겟비율: 0, 누적증분구매: 0, random_baseline: 0 },
+            { 타겟비율: 10, 누적증분구매: 847, random_baseline: 284 },
+            { 타겟비율: 20, 누적증분구매: 1523, random_baseline: 568 },
+            { 타겟비율: 30, 누적증분구매: 2247, random_baseline: 852 },
+            { 타겟비율: 40, 누적증분구매: 2834, random_baseline: 1136 },
+            { 타겟비율: 50, 누적증분구매: 3291, random_baseline: 1420 },
+            { 타겟비율: 60, 누적증분구매: 3642, random_baseline: 1704 },
+            { 타겟비율: 70, 누적증분구매: 3918, random_baseline: 1988 },
+            { 타겟비율: 80, 누적증분구매: 4124, random_baseline: 2272 },
+            { 타겟비율: 90, 누적증분구매: 4287, random_baseline: 2556 },
+            { 타겟비율: 100, 누적증분구매: 4420, random_baseline: 2840 },
+          ],
         },
-        "layer": [
+        layer: [
           {
-            "mark": {
-              "type": "line",
-              "point": true,
-              "tooltip": true,
-              "strokeWidth": 3,
-              "color": "#dc2626"
+            mark: {
+              type: "line",
+              point: true,
+              tooltip: true,
+              strokeWidth: 3,
+              color: "#dc2626",
             },
-            "encoding": {
-              "x": {"field": "타겟비율", "type": "quantitative", "title": "타겟팅 비율 (%)"},
-              "y": {"field": "누적증분구매", "type": "quantitative", "title": "누적 증분 구매 건수"}
-            }
+            encoding: {
+              x: {
+                field: "타겟비율",
+                type: "quantitative",
+                title: "타겟팅 비율 (%)",
+              },
+              y: {
+                field: "누적증분구매",
+                type: "quantitative",
+                title: "누적 증분 구매 건수",
+              },
+            },
           },
           {
-            "mark": {
-              "type": "line", 
-              "strokeDash": [5, 5],
-              "color": "#94a3b8",
-              "strokeWidth": 2
+            mark: {
+              type: "line",
+              strokeDash: [5, 5],
+              color: "#94a3b8",
+              strokeWidth: 2,
             },
-            "encoding": {
-              "x": {"field": "타겟비율", "type": "quantitative"},
-              "y": {"field": "random_baseline", "type": "quantitative"}
-            }
-          }
-        ]
+            encoding: {
+              x: { field: "타겟비율", type: "quantitative" },
+              y: { field: "random_baseline", type: "quantitative" },
+            },
+          },
+        ],
       },
 
       data: [
         {
-          "buyer_id": "CHN_2024_007842",
-          "churn_risk_flag": 1,
-          "uplift_score": 0.324,
-          "p_treated": 0.678,
-          "p_control": 0.354, 
-          "action": "send_coupon_15pct",
-          "top_features": "coupon_usage_rate:0.73, rfm_recency:67, aov:156000"
+          buyer_id: "CHN_2024_007842",
+          churn_risk_flag: 1,
+          uplift_score: 0.324,
+          p_treated: 0.678,
+          p_control: 0.354,
+          action: "send_coupon_15pct",
+          top_features: "coupon_usage_rate:0.73, rfm_recency:67, aov:156000",
         },
         {
-          "buyer_id": "CHN_2024_007843",
-          "churn_risk_flag": 1,
-          "uplift_score": 0.289,
-          "p_treated": 0.634,
-          "p_control": 0.345,
-          "action": "send_coupon_15pct", 
-          "top_features": "coupon_usage_rate:0.68, brand_diversity:0.42, email_open_rate:0.89"
+          buyer_id: "CHN_2024_007843",
+          churn_risk_flag: 1,
+          uplift_score: 0.289,
+          p_treated: 0.634,
+          p_control: 0.345,
+          action: "send_coupon_15pct",
+          top_features:
+            "coupon_usage_rate:0.68, brand_diversity:0.42, email_open_rate:0.89",
         },
         {
-          "buyer_id": "CHN_2024_007844",
-          "churn_risk_flag": 1,
-          "uplift_score": 0.267,
-          "p_treated": 0.612,
-          "p_control": 0.345,
-          "action": "send_coupon_15pct",
-          "top_features": "rfm_frequency:12, category_concentration:0.73, mobile_device:1"
+          buyer_id: "CHN_2024_007844",
+          churn_risk_flag: 1,
+          uplift_score: 0.267,
+          p_treated: 0.612,
+          p_control: 0.345,
+          action: "send_coupon_15pct",
+          top_features:
+            "rfm_frequency:12, category_concentration:0.73, mobile_device:1",
         },
         {
-          "buyer_id": "CHN_2024_007845", 
-          "churn_risk_flag": 1,
-          "uplift_score": 0.178,
-          "p_treated": 0.534,
-          "p_control": 0.356,
-          "action": "send_coupon_10pct",
-          "top_features": "aov:89000, purchase_dow_pattern:weekend, push_enabled:1"
+          buyer_id: "CHN_2024_007845",
+          churn_risk_flag: 1,
+          uplift_score: 0.178,
+          p_treated: 0.534,
+          p_control: 0.356,
+          action: "send_coupon_10pct",
+          top_features:
+            "aov:89000, purchase_dow_pattern:weekend, push_enabled:1",
         },
         {
-          "buyer_id": "CHN_2024_007846",
-          "churn_risk_flag": 1,
-          "uplift_score": 0.071,
-          "p_treated": 0.402,
-          "p_control": 0.331,
-          "action": "send_freeship_only",
-          "top_features": "rfm_recency:134, new_customer:1, discount_sensitivity:0.23"
-        }
+          buyer_id: "CHN_2024_007846",
+          churn_risk_flag: 1,
+          uplift_score: 0.071,
+          p_treated: 0.402,
+          p_control: 0.331,
+          action: "send_freeship_only",
+          top_features:
+            "rfm_recency:134, new_customer:1, discount_sensitivity:0.23",
+        },
       ],
 
       model_status: {
-        status: "ready", 
+        status: "ready",
         model: "T-Learner (2x RandomForestClassifier)",
-        type: "uplift_modeling"
+        type: "uplift_modeling",
       },
 
-      prediction_basis: "Temporal split으로 시간누수 차단. 과거 캠페인 로그에서 처리군/대조군 라벨링 → 14일 윈도우 내 구매 여부로 Y 생성. RFM + 할인민감도 + 브랜드다양성 피처 활용. Qini Curve 검증."
-    }
+      prediction_basis:
+        "Temporal split으로 시간누수 차단. 과거 캠페인 로그에서 처리군/대조군 라벨링 → 14일 윈도우 내 구매 여부로 Y 생성. RFM + 할인민감도 + 브랜드다양성 피처 활용. Qini Curve 검증.",
+    },
   },
 
   {
-    id: 'pricing-elasticity-analysis',
-    title: '이번 주에 상의/하의 각 5% 가격 인하하면 예측 판매량이 얼마나 늘까?',
-    description: '가격 탄력성 기반 상의/하의 카테고리 할인 효과 예측',
-    category: '가격 최적화',
-    difficulty: 'expert',
+    id: "pricing-elasticity-analysis",
+    title: "이번 주에 상의/하의 각 5% 가격 인하하면 예측 판매량이 얼마나 늘까?",
+    description: "가격 탄력성 기반 상의/하의 카테고리 할인 효과 예측",
+    category: "가격 최적화",
+    difficulty: "expert",
     result: {
       analysis: `## 상의/하의 5% 가격 인하 판매량 증가 예측
 
@@ -465,80 +503,98 @@ export const recommendedQueries: RecommendedQuery[] = [
 - 브랜드 포지셔닝 영향 최소화를 위한 "특별 기획전" 포장 권장`,
 
       visualization: {
-        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-        "title": "5% 가격 할인 시 상의/하의 판매량 증가 예측",
-        "width": 600,
-        "height": 400,
-        "data": {
-          "values": [
-            {"카테고리": "상의", "할인전": 12847, "할인후": 17235, "증가율": 34.1, "매출증가": 355600000},
-            {"카테고리": "하의", "할인전": 8924, "할인후": 11387, "증가율": 27.6, "매출증가": 263700000}
-          ]
+        $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+        title: "5% 가격 할인 시 상의/하의 판매량 증가 예측",
+        width: 600,
+        height: 400,
+        data: {
+          values: [
+            {
+              카테고리: "상의",
+              할인전: 12847,
+              할인후: 17235,
+              증가율: 34.1,
+              매출증가: 355600000,
+            },
+            {
+              카테고리: "하의",
+              할인전: 8924,
+              할인후: 11387,
+              증가율: 27.6,
+              매출증가: 263700000,
+            },
+          ],
         },
-        "layer": [
+        layer: [
           {
-            "mark": {"type": "bar", "tooltip": true, "width": 40},
-            "encoding": {
-              "x": {"field": "카테고리", "type": "nominal", "title": "카테고리"},
-              "y": {"field": "할인전", "type": "quantitative", "title": "판매량 (개)"},
-              "color": {"value": "#94a3b8"}
-            }
+            mark: { type: "bar", tooltip: true, width: 40 },
+            encoding: {
+              x: { field: "카테고리", type: "nominal", title: "카테고리" },
+              y: {
+                field: "할인전",
+                type: "quantitative",
+                title: "판매량 (개)",
+              },
+              color: { value: "#94a3b8" },
+            },
           },
           {
-            "mark": {"type": "bar", "tooltip": true, "width": 40, "xOffset": 45},
-            "encoding": {
-              "x": {"field": "카테고리", "type": "nominal"},
-              "y": {"field": "할인후", "type": "quantitative"},
-              "color": {"value": "#059669"}
-            }
+            mark: { type: "bar", tooltip: true, width: 40, xOffset: 45 },
+            encoding: {
+              x: { field: "카테고리", type: "nominal" },
+              y: { field: "할인후", type: "quantitative" },
+              color: { value: "#059669" },
+            },
           },
           {
-            "mark": {"type": "text", "dy": -10, "fontSize": 12, "fontWeight": "bold"},
-            "encoding": {
-              "x": {"field": "카테고리", "type": "nominal"},
-              "y": {"field": "할인후", "type": "quantitative"},
-              "text": {"field": "증가율", "type": "quantitative", "format": "+.1f"},
-              "color": {"value": "#059669"}
-            }
-          }
-        ]
+            mark: { type: "text", dy: -10, fontSize: 12, fontWeight: "bold" },
+            encoding: {
+              x: { field: "카테고리", type: "nominal" },
+              y: { field: "할인후", type: "quantitative" },
+              text: { field: "증가율", type: "quantitative", format: "+.1f" },
+              color: { value: "#059669" },
+            },
+          },
+        ],
       },
 
       data: [
         {
-          "category": "상의",
-          "beforeDiscount": 12847,
-          "afterDiscount": 17235,
-          "increaseRate": 34.1,
-          "revenueIncrease": 355600000,
-          "priceElasticity": -1.68
+          category: "상의",
+          beforeDiscount: 12847,
+          afterDiscount: 17235,
+          increaseRate: 34.1,
+          revenueIncrease: 355600000,
+          priceElasticity: -1.68,
         },
         {
-          "category": "하의", 
-          "beforeDiscount": 8924,
-          "afterDiscount": 11387,
-          "increaseRate": 27.6,
-          "revenueIncrease": 263700000,
-          "priceElasticity": -1.38
-        }
+          category: "하의",
+          beforeDiscount: 8924,
+          afterDiscount: 11387,
+          increaseRate: 27.6,
+          revenueIncrease: 263700000,
+          priceElasticity: -1.38,
+        },
       ],
 
       model_status: {
         status: "ready",
         model: "Price Elasticity Model (Ridge Regression)",
-        type: "forecasting"
+        type: "forecasting",
       },
 
-      prediction_basis: "과거 24개월 할인 이벤트 데이터와 가격-판매량 상관관계 분석을 통한 가격 탄력성 모델"
-    }
+      prediction_basis:
+        "과거 24개월 할인 이벤트 데이터와 가격-판매량 상관관계 분석을 통한 가격 탄력성 모델",
+    },
   },
 
   {
-    id: 'cart-abandonment-prediction',
-    title: '장바구니에 담고 나간 사람 중 48시간 내 결제할 가능성 높은 사용자만 알려줘',
-    description: '장바구니 이탈 고객의 48시간 내 구매 전환 예측',
-    category: '전환율 최적화',
-    difficulty: 'expert',
+    id: "cart-abandonment-prediction",
+    title:
+      "장바구니에 담고 나간 사람 중 48시간 내 결제할 가능성 높은 사용자만 알려줘",
+    description: "장바구니 이탈 고객의 48시간 내 구매 전환 예측",
+    category: "전환율 최적화",
+    difficulty: "expert",
     result: {
       analysis: `## 장바구니 이탈 고객 48시간 내 구매 전환 예측
 
@@ -612,81 +668,116 @@ export const recommendedQueries: RecommendedQuery[] = [
 **마케팅 ROI**: 1,250% (평균 전환 시)`,
 
       visualization: {
-        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-        "title": "장바구니 이탈 고객의 48시간 내 구매 확률 분포",
-        "width": 600,
-        "height": 400,
-        "data": {
-          "values": [
-            {"시간대": "0-6시간", "초고확률": 561, "고확률": 851, "중고확률": 517, "저확률": 423},
-            {"시간대": "6-12시간", "초고확률": 374, "고확률": 567, "중고확률": 344, "저확률": 298},
-            {"시간대": "12-24시간", "초고확률": 249, "고확률": 378, "중고확률": 230, "저확률": 234},
-            {"시간대": "24-36시간", "초고확률": 124, "고확률": 189, "중고확률": 115, "저확률": 187},
-            {"시간대": "36-48시간", "초고확률": 62, "고확률": 95, "중고확률": 57, "저확률": 156}
-          ]
-        },
-        "transform": [
-          {
-            "fold": ["초고확률", "고확률", "중고확률", "저확률"],
-            "as": ["확률그룹", "고객수"]
-          }
-        ],
-        "mark": {"type": "area", "tooltip": true},
-        "encoding": {
-          "x": {"field": "시간대", "type": "ordinal", "title": "이탈 후 경과 시간"},
-          "y": {"field": "고객수", "type": "quantitative", "title": "구매 전환 고객 수"},
-          "color": {
-            "field": "확률그룹",
-            "type": "nominal",
-            "scale": {
-              "domain": ["초고확률", "고확률", "중고확률", "저확률"],
-              "range": ["#dc2626", "#ea580c", "#d97706", "#94a3b8"]
+        $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+        title: "장바구니 이탈 고객의 48시간 내 구매 확률 분포",
+        width: 600,
+        height: 400,
+        data: {
+          values: [
+            {
+              시간대: "0-6시간",
+              초고확률: 561,
+              고확률: 851,
+              중고확률: 517,
+              저확률: 423,
             },
-            "legend": {"title": "구매 확률 그룹"}
-          }
-        }
+            {
+              시간대: "6-12시간",
+              초고확률: 374,
+              고확률: 567,
+              중고확률: 344,
+              저확률: 298,
+            },
+            {
+              시간대: "12-24시간",
+              초고확률: 249,
+              고확률: 378,
+              중고확률: 230,
+              저확률: 234,
+            },
+            {
+              시간대: "24-36시간",
+              초고확률: 124,
+              고확률: 189,
+              중고확률: 115,
+              저확률: 187,
+            },
+            {
+              시간대: "36-48시간",
+              초고확률: 62,
+              고확률: 95,
+              중고확률: 57,
+              저확률: 156,
+            },
+          ],
+        },
+        transform: [
+          {
+            fold: ["초고확률", "고확률", "중고확률", "저확률"],
+            as: ["확률그룹", "고객수"],
+          },
+        ],
+        mark: { type: "area", tooltip: true },
+        encoding: {
+          x: { field: "시간대", type: "ordinal", title: "이탈 후 경과 시간" },
+          y: {
+            field: "고객수",
+            type: "quantitative",
+            title: "구매 전환 고객 수",
+          },
+          color: {
+            field: "확률그룹",
+            type: "nominal",
+            scale: {
+              domain: ["초고확률", "고확률", "중고확률", "저확률"],
+              range: ["#dc2626", "#ea580c", "#d97706", "#94a3b8"],
+            },
+            legend: { title: "구매 확률 그룹" },
+          },
+        },
       },
 
       data: [
         {
-          "probabilityGroup": "초고확률 (85-95%)",
-          "customerCount": 1247,
-          "avgCartValue": 127000,
-          "conversionRate": 92,
-          "expectedRevenue": 145800000
+          probabilityGroup: "초고확률 (85-95%)",
+          customerCount: 1247,
+          avgCartValue: 127000,
+          conversionRate: 92,
+          expectedRevenue: 145808000,
         },
         {
-          "probabilityGroup": "고확률 (70-84%)",
-          "customerCount": 1891, 
-          "avgCartValue": 89000,
-          "conversionRate": 76,
-          "expectedRevenue": 127900000
+          probabilityGroup: "고확률 (70-84%)",
+          customerCount: 1891,
+          avgCartValue: 89000,
+          conversionRate: 76,
+          expectedRevenue: 127900000,
         },
         {
-          "probabilityGroup": "중고확률 (55-69%)",
-          "customerCount": 1148,
-          "avgCartValue": 64000,
-          "conversionRate": 61,
-          "expectedRevenue": 44700000
-        }
+          probabilityGroup: "중고확률 (55-69%)",
+          customerCount: 1148,
+          avgCartValue: 64000,
+          conversionRate: 61,
+          expectedRevenue: 44700000,
+        },
       ],
 
       model_status: {
         status: "ready",
-        model: "Gradient Boosting + Neural Network Ensemble", 
-        type: "classification"
+        model: "Gradient Boosting + Neural Network Ensemble",
+        type: "classification",
       },
 
-      prediction_basis: "최근 6개월 장바구니 이탈 고객 178,429명의 행동 패턴과 구매 전환 이력 기반 딥러닝 모델"
-    }
+      prediction_basis:
+        "최근 6개월 장바구니 이탈 고객 178,429명의 행동 패턴과 구매 전환 이력 기반 딥러닝 모델",
+    },
   },
 
   {
-    id: 'brand-loyalty-analysis',
-    title: '브랜드 신뢰도가 높아 재구매로 이어질 확률 큰 브랜드 톱5는 어디야?',
-    description: '브랜드별 신뢰도 및 재구매 확률 분석',
-    category: '브랜드 분석',
-    difficulty: 'expert',
+    id: "brand-loyalty-analysis",
+    title: "브랜드 신뢰도가 높아 재구매로 이어질 확률 큰 브랜드 톱5는 어디야?",
+    description: "브랜드별 신뢰도 및 재구매 확률 분석",
+    category: "브랜드 분석",
+    difficulty: "expert",
     result: {
       analysis: `## 브랜드 신뢰도 & 재구매 확률 TOP 5 분석
 
@@ -782,110 +873,196 @@ export const recommendedQueries: RecommendedQuery[] = [
 **예상 효과**: 재구매율 +12%, 고객 생애 가치 +28% 증대`,
 
       visualization: {
-        "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
-        "title": "브랜드별 재구매 확률 vs 브랜드 신뢰도",
-        "width": 600,
-        "height": 400,
-        "data": {
-          "values": [
-            {"브랜드": "노스페이스", "재구매확률": 87.2, "신뢰도": 94.1, "매출기여": 15.3, "만족도": 4.8},
-            {"브랜드": "아크테릭스", "재구매확률": 84.6, "신뢰도": 91.7, "매출기여": 8.9, "만족도": 4.7},
-            {"브랜드": "파타고니아", "재구매확률": 82.1, "신뢰도": 93.4, "매출기여": 7.1, "만족도": 4.6},
-            {"브랜드": "메종마르지엘라", "재구매확률": 79.3, "신뢰도": 87.2, "매출기여": 11.2, "만족도": 4.5},
-            {"브랜드": "스톤아일랜드", "재구매확률": 76.8, "신뢰도": 85.1, "매출기여": 9.4, "만족도": 4.4},
-            {"브랜드": "몽클레어", "재구매확률": 73.2, "신뢰도": 82.9, "매출기여": 6.7, "만족도": 4.3},
-            {"브랜드": "캐나다구스", "재구매확률": 71.9, "신뢰도": 79.6, "매출기여": 5.8, "만족도": 4.2},
-            {"브랜드": "골듨구스", "재구매확률": 58.4, "신뢰도": 74.3, "매출기여": 4.1, "만족도": 3.9},
-            {"브랜드": "디스퀘어드", "재구매확률": 66.7, "신뢰도": 68.5, "매출기여": 3.9, "만족도": 4.0},
-            {"브랜드": "오프화이트", "재구매확률": 62.3, "신뢰도": 71.2, "매출기여": 3.4, "만족도": 3.8},
-            {"브랜드": "발렌시아가", "재구매확률": 55.1, "신뢰도": 77.8, "매출기여": 2.8, "만족도": 3.7},
-            {"브랜드": "베트멍", "재구매확률": 49.6, "신뢰도": 63.4, "매출기여": 2.1, "만족도": 3.4}
-          ]
+        $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+        title: "브랜드별 재구매 확률 vs 브랜드 신뢰도",
+        width: 600,
+        height: 400,
+        data: {
+          values: [
+            {
+              브랜드: "노스페이스",
+              재구매확률: 87.2,
+              신뢰도: 94.1,
+              매출기여: 15.3,
+              만족도: 4.8,
+            },
+            {
+              브랜드: "아크테릭스",
+              재구매확률: 84.6,
+              신뢰도: 91.7,
+              매출기여: 8.9,
+              만족도: 4.7,
+            },
+            {
+              브랜드: "파타고니아",
+              재구매확률: 82.1,
+              신뢰도: 93.4,
+              매출기여: 7.1,
+              만족도: 4.6,
+            },
+            {
+              브랜드: "메종마르지엘라",
+              재구매확률: 79.3,
+              신뢰도: 87.2,
+              매출기여: 11.2,
+              만족도: 4.5,
+            },
+            {
+              브랜드: "스톤아일랜드",
+              재구매확률: 76.8,
+              신뢰도: 85.1,
+              매출기여: 9.4,
+              만족도: 4.4,
+            },
+            {
+              브랜드: "몽클레어",
+              재구매확률: 73.2,
+              신뢰도: 82.9,
+              매출기여: 6.7,
+              만족도: 4.3,
+            },
+            {
+              브랜드: "캐나다구스",
+              재구매확률: 71.9,
+              신뢰도: 79.6,
+              매출기여: 5.8,
+              만족도: 4.2,
+            },
+            {
+              브랜드: "골듨구스",
+              재구매확률: 58.4,
+              신뢰도: 74.3,
+              매출기여: 4.1,
+              만족도: 3.9,
+            },
+            {
+              브랜드: "디스퀘어드",
+              재구매확률: 66.7,
+              신뢰도: 68.5,
+              매출기여: 3.9,
+              만족도: 4.0,
+            },
+            {
+              브랜드: "오프화이트",
+              재구매확률: 62.3,
+              신뢰도: 71.2,
+              매출기여: 3.4,
+              만족도: 3.8,
+            },
+            {
+              브랜드: "발렌시아가",
+              재구매확률: 55.1,
+              신뢰도: 77.8,
+              매출기여: 2.8,
+              만족도: 3.7,
+            },
+            {
+              브랜드: "베트멍",
+              재구매확률: 49.6,
+              신뢰도: 63.4,
+              매출기여: 2.1,
+              만족도: 3.4,
+            },
+          ],
         },
-        "layer": [
+        layer: [
           {
-            "mark": {"type": "circle", "tooltip": true},
-            "encoding": {
-              "x": {"field": "신뢰도", "type": "quantitative", "title": "브랜드 신뢰도 (점)"},
-              "y": {"field": "재구매확률", "type": "quantitative", "title": "재구매 확률 (%)"},
-              "size": {"field": "매출기여", "type": "quantitative", "title": "매출 기여도 (%)", "scale": {"range": [100, 1000]}},
-              "color": {
-                "condition": {
-                  "test": "datum.브랜드 === '노스페이스' || datum.브랜드 === '메종마르지엘라' || datum.브랜드 === '아크테릭스' || datum.브랜드 === '파타고니아' || datum.브랜드 === '스톤아일랜드'",
-                  "value": "#f59e0b"
+            mark: { type: "circle", tooltip: true },
+            encoding: {
+              x: {
+                field: "신뢰도",
+                type: "quantitative",
+                title: "브랜드 신뢰도 (점)",
+              },
+              y: {
+                field: "재구매확률",
+                type: "quantitative",
+                title: "재구매 확률 (%)",
+              },
+              size: {
+                field: "매출기여",
+                type: "quantitative",
+                title: "매출 기여도 (%)",
+                scale: { range: [100, 1000] },
+              },
+              color: {
+                condition: {
+                  test: "datum.브랜드 === '노스페이스' || datum.브랜드 === '메종마르지엘라' || datum.브랜드 === '아크테릭스' || datum.브랜드 === '파타고니아' || datum.브랜드 === '스톤아일랜드'",
+                  value: "#f59e0b",
                 },
-                "value": "#64748b"
-              }
-            }
+                value: "#64748b",
+              },
+            },
           },
           {
-            "mark": {"type": "text", "dy": -15, "fontSize": 10, "fontWeight": "bold"},
-            "encoding": {
-              "x": {"field": "신뢰도", "type": "quantitative"},
-              "y": {"field": "재구매확률", "type": "quantitative"},
-              "text": {"field": "브랜드", "type": "nominal"},
-              "color": {
-                "condition": {
-                  "test": "datum.브랜드 === '노스페이스' || datum.브랜드 === '메종마르지엘라' || datum.브랜드 === '아크테릭스' || datum.브랜드 === '파타고니아' || datum.브랜드 === '스톤아일랜드'",
-                  "value": "#f59e0b"
+            mark: { type: "text", dy: -15, fontSize: 10, fontWeight: "bold" },
+            encoding: {
+              x: { field: "신뢰도", type: "quantitative" },
+              y: { field: "재구매확률", type: "quantitative" },
+              text: { field: "브랜드", type: "nominal" },
+              color: {
+                condition: {
+                  test: "datum.브랜드 === '노스페이스' || datum.브랜드 === '메종마르지엘라' || datum.브랜드 === '아크테릭스' || datum.브랜드 === '파타고니아' || datum.브랜드 === '스톤아일랜드'",
+                  value: "#f59e0b",
                 },
-                "value": "#64748b"
-              }
-            }
-          }
-        ]
+                value: "#64748b",
+              },
+            },
+          },
+        ],
       },
 
       data: [
         {
-          "rank": 1,
-          "brand": "노스페이스",
-          "repurchaseRate": 87.3,
-          "trustScore": 94.2,
-          "satisfaction": 4.7,
-          "revenueContribution": 12.4
+          rank: 1,
+          brand: "노스페이스",
+          repurchaseRate: 87.3,
+          trustScore: 94.2,
+          satisfaction: 4.7,
+          revenueContribution: 12.4,
         },
         {
-          "rank": 2,
-          "brand": "메종 마르지엘라", 
-          "repurchaseRate": 84.1,
-          "trustScore": 91.8,
-          "satisfaction": 4.6,
-          "revenueContribution": 8.9
+          rank: 2,
+          brand: "메종 마르지엘라",
+          repurchaseRate: 84.1,
+          trustScore: 91.8,
+          satisfaction: 4.6,
+          revenueContribution: 8.9,
         },
         {
-          "rank": 3,
-          "brand": "아크테릭스",
-          "repurchaseRate": 82.7,
-          "trustScore": 93.1,
-          "satisfaction": 4.8,
-          "revenueContribution": 6.2
+          rank: 3,
+          brand: "아크테릭스",
+          repurchaseRate: 82.7,
+          trustScore: 93.1,
+          satisfaction: 4.8,
+          revenueContribution: 6.2,
         },
         {
-          "rank": 4,
-          "brand": "파타고니아",
-          "repurchaseRate": 81.4,
-          "trustScore": 92.7,
-          "satisfaction": 4.7,
-          "revenueContribution": 4.8
+          rank: 4,
+          brand: "파타고니아",
+          repurchaseRate: 81.4,
+          trustScore: 92.7,
+          satisfaction: 4.7,
+          revenueContribution: 4.8,
         },
         {
-          "rank": 5,
-          "brand": "스톤아일랜드",
-          "repurchaseRate": 79.8,
-          "trustScore": 90.3,
-          "satisfaction": 4.5,
-          "revenueContribution": 5.1
-        }
+          rank: 5,
+          brand: "스톤아일랜드",
+          repurchaseRate: 79.8,
+          trustScore: 90.3,
+          satisfaction: 4.5,
+          revenueContribution: 5.1,
+        },
       ],
 
       model_status: {
         status: "ready",
         model: "Multi-factor Analysis (PCA + Clustering)",
-        type: "analytical"
+        type: "analytical",
       },
 
-      prediction_basis: "12개월간 브랜드별 재구매 이력, 고객 만족도 조사, 브랜드 인지도 설문을 종합한 다변량 분석"
-    }
-  }
+      prediction_basis:
+        "12개월간 브랜드별 재구매 이력, 고객 만족도 조사, 브랜드 인지도 설문을 종합한 다변량 분석",
+    },
+  },
 ];

@@ -261,7 +261,7 @@ const SmartAnalysisPage: React.FC = () => {
 
       const response = await fetch(
         `${
-          process.env.REACT_APP_API_URL || "http://localhost:8000"
+          process.env.REACT_APP_API_URL || "http://localhost:8080"
         }/llm-analysis/analyze`,
         {
           method: "POST",
@@ -307,7 +307,7 @@ const SmartAnalysisPage: React.FC = () => {
     try {
       const response = await fetch(
         `${
-          process.env.REACT_APP_API_URL || "http://localhost:8000"
+          process.env.REACT_APP_API_URL || "http://localhost:8080"
         }/llm-analysis/report`,
         {
           method: "POST",

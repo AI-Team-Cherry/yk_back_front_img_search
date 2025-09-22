@@ -6,12 +6,16 @@ from pathlib import Path
 import os
 import tempfile
 import shutil
+import httpx
+import re
 
 from app.services.image_gen import generate_image
 from app.services.gemini_service import gemini_service
 from app.utils.translate import translate_fashion_query_ko2en  # 한국어 쿼리 번역 유틸
 
 router = APIRouter()
+
+COLAB_BASE_URL = os.getenv("COLAB_BASE_URL")
 
 # 이미지 디렉토리 경로
 IMAGES_DIR = Path(__file__).parent.parent.parent / "img_search" / "only_product_images"
@@ -123,7 +127,7 @@ async def download_image(filename: str):
         },
     )
 
-
+'''
 @router.get("/search")
 async def search_images(q: str, limit: int = 9):
     """자연어 검색 API (한국어 → 영어 변환 + 최대 9개)"""
@@ -150,6 +154,53 @@ async def search_images(q: str, limit: int = 9):
             return fallback
         except Exception:
             raise HTTPException(status_code=500, detail=f"검색 실패: {str(e)}")
+'''
+@router.get("/search")
+async def search_images(q: str, limit: int = 9):
+    """자연어 검색 API (한국어 → 영어 변환 + 추상 질의 해석 + 최대 9개)"""
+    try:
+        limit = _clamp_limit(limit)
+        original_q = (q or "").strip()
+        if not original_q:
+            raise HTTPException(status_code=400, detail="검색어가 필요합니다.")
+
+        # 1️⃣ 한국어 → 영어 직역
+        base_query = translate_fashion_query_ko2en(original_q)
+
+        # 2️⃣ Colab LLM 호출
+        query_used = base_query
+        if COLAB_BASE_URL:
+            try:
+                async with httpx.AsyncClient(timeout=20) as client:
+                    res = await client.post(
+                        f"{COLAB_BASE_URL}/fashion-query",
+                        json={"query": original_q, "base_query": base_query},
+                    )
+                if res.status_code == 200:
+                    colab_data = res.json()
+                    query_used = colab_data.get("query_used", base_query).strip()
+            except Exception as e:
+                print("❌ Colab 요청 실패, fallback 사용:", e)
+
+        # 🔹 후처리: 너무 긴 문장 → 10단어 이하로 압축
+        query_used = " ".join(query_used.split()[:10])
+
+        print(f"[ImageSearch] original='{original_q}' | used='{query_used}' | limit={limit}")
+
+        # 3️⃣ CLIP 검색
+        result = await generate_image(query_used, limit)
+        images = result.get("images", [])[:limit]
+
+        return _format_response(images, original_q, query_used)
+
+    except Exception as e:
+        print(f"AI 검색 실패: {e}")
+        try:
+            fallback = await list_images(query=q, limit=limit)
+            return fallback
+        except Exception:
+            raise HTTPException(status_code=500, detail=f"검색 실패: {str(e)}")
+
 
 
 @router.post("/search-by-image")

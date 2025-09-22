@@ -170,7 +170,7 @@ cd frontend
 npm install
 
 # 환경변수 설정 (frontend/.env.development)
-echo "REACT_APP_API_URL=http://localhost:8000" > .env.development
+echo "REACT_APP_API_URL=http://localhost:8080" > .env.development
 ```
 
 ### 5. 실행
@@ -179,7 +179,7 @@ echo "REACT_APP_API_URL=http://localhost:8000" > .env.development
 
 ```bash
 # 프로젝트 루트에서
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 ```
 
 **프론트엔드 실행:**
@@ -191,9 +191,9 @@ npm start
 
 서버가 정상적으로 실행되면:
 
-- 백엔드: http://localhost:8000
+- 백엔드: http://localhost:8080
 - 프론트엔드: http://localhost:3000
-- API 문서: http://localhost:8000/docs
+- API 문서: http://localhost:8080/docs
 
 ---
 
@@ -310,7 +310,7 @@ pymongo.errors.ServerSelectionTimeoutError
 CORS policy error
 ```
 
-- 백엔드가 8000 포트에서 실행 중인지 확인
+- 백엔드가 8080 포트에서 실행 중인지 확인
 - `frontend/.env.development` 파일 확인
 
 **3. 패키지 설치 오류**
@@ -327,7 +327,7 @@ pip install 실패
 **백엔드 로그:**
 
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --log-level debug
+uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload --log-level debug
 ```
 
 **프론트엔드 로그:**

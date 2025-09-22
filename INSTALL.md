@@ -61,8 +61,8 @@ start-frontend.bat
 ### 4. 접속
 
 - 프론트엔드: http://localhost:3000
-- 백엔드 API: http://localhost:8000
-- API 문서: http://localhost:8000/docs
+- 백엔드 API: http://localhost:8080
+- API 문서: http://localhost:8080/docs
 
 ---
 
@@ -124,7 +124,7 @@ Node.js가 설치되지 않았습니다:
 
 ```bash
 # 포트 사용 확인
-netstat -ano | findstr :8000
+netstat -ano | findstr :8080
 netstat -ano | findstr :3000
 
 # 프로세스 종료 (PID 확인 후)
@@ -145,7 +145,7 @@ taskkill /PID [PID번호] /F
 
 1. [README.md](README.md)에서 전체 기능 살펴보기
 2. http://localhost:3000 에서 회원가입 후 플랫폼 사용해보기
-3. http://localhost:8000/docs 에서 API 문서 확인하기
+3. http://localhost:8080/docs 에서 API 문서 확인하기
 
 ---
 

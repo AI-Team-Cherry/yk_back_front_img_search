@@ -1,19 +1,20 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8001/api';
+const API_BASE_URL =
+  process.env.REACT_APP_API_URL || "http://localhost:8080/api";
 
 // API 클라이언트 설정
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
 // 요청 인터셉터: 토큰 자동 추가
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -26,7 +27,12 @@ api.interceptors.request.use(
 
 // ML 분석 요청 타입
 export interface MLAnalysisRequest {
-  analysis_type: 'clustering' | 'prediction' | 'timeseries' | 'anomaly' | 'segmentation';
+  analysis_type:
+    | "clustering"
+    | "prediction"
+    | "timeseries"
+    | "anomaly"
+    | "segmentation";
   collection_name: string;
   parameters?: Record<string, any>;
   save_analysis?: boolean;
@@ -58,12 +64,15 @@ export interface MLAnalysisResult {
 export interface MLMethod {
   name: string;
   description: string;
-  parameters: Record<string, {
-    type: string;
-    default?: any;
-    description: string;
-    options?: string[];
-  }>;
+  parameters: Record<
+    string,
+    {
+      type: string;
+      default?: any;
+      description: string;
+      options?: string[];
+    }
+  >;
 }
 
 // ML 컬렉션 정보 타입
@@ -81,12 +90,12 @@ class MLAnalyticsService {
    */
   async performAnalysis(request: MLAnalysisRequest): Promise<MLAnalysisResult> {
     try {
-      const response = await api.post('/ml/analyze', request);
+      const response = await api.post("/ml/analyze", request);
       return response.data;
     } catch (error: any) {
-      console.error('ML 분석 오류:', error);
+      console.error("ML 분석 오류:", error);
       throw new Error(
-        error.response?.data?.detail || 'ML 분석 중 오류가 발생했습니다.'
+        error.response?.data?.detail || "ML 분석 중 오류가 발생했습니다."
       );
     }
   }
@@ -96,12 +105,13 @@ class MLAnalyticsService {
    */
   async getMLMethods(): Promise<Record<string, MLMethod>> {
     try {
-      const response = await api.get('/ml/methods');
+      const response = await api.get("/ml/methods");
       return response.data.methods;
     } catch (error: any) {
-      console.error('ML 방법 목록 조회 오류:', error);
+      console.error("ML 방법 목록 조회 오류:", error);
       throw new Error(
-        error.response?.data?.detail || 'ML 방법 목록을 가져오는 중 오류가 발생했습니다.'
+        error.response?.data?.detail ||
+          "ML 방법 목록을 가져오는 중 오류가 발생했습니다."
       );
     }
   }
@@ -113,29 +123,29 @@ class MLAnalyticsService {
     // cherry_back에는 별도의 collections API가 없으므로 기본 컬렉션 목록 반환
     return [
       {
-        name: 'sales',
+        name: "sales",
         document_count: 10000,
-        numeric_fields: ['amount', 'quantity', 'price'],
-        sample_fields: ['date', 'product_id', 'customer_id']
+        numeric_fields: ["amount", "quantity", "price"],
+        sample_fields: ["date", "product_id", "customer_id"],
       },
       {
-        name: 'customers',
+        name: "customers",
         document_count: 5000,
-        numeric_fields: ['age', 'purchase_count', 'total_spent'],
-        sample_fields: ['name', 'email', 'region']
+        numeric_fields: ["age", "purchase_count", "total_spent"],
+        sample_fields: ["name", "email", "region"],
       },
       {
-        name: 'products',
+        name: "products",
         document_count: 1000,
-        numeric_fields: ['price', 'stock', 'rating'],
-        sample_fields: ['name', 'category', 'brand']
+        numeric_fields: ["price", "stock", "rating"],
+        sample_fields: ["name", "category", "brand"],
       },
       {
-        name: 'reviews',
+        name: "reviews",
         document_count: 20000,
-        numeric_fields: ['rating', 'helpful_count'],
-        sample_fields: ['text', 'product_id', 'created_at']
-      }
+        numeric_fields: ["rating", "helpful_count"],
+        sample_fields: ["text", "product_id", "created_at"],
+      },
     ];
   }
 
@@ -148,13 +158,13 @@ class MLAnalyticsService {
     sampleSize: number = 1000
   ): Promise<MLAnalysisResult> {
     return this.performAnalysis({
-      analysis_type: 'clustering',
+      analysis_type: "clustering",
       collection_name: collectionName,
       parameters: {
         n_clusters: nClusters,
         sample_size: sampleSize,
       },
-      tags: ['clustering', 'customer-segmentation'],
+      tags: ["clustering", "customer-segmentation"],
     });
   }
 
@@ -171,16 +181,16 @@ class MLAnalyticsService {
       days_ahead: daysAhead,
       sample_size: sampleSize,
     };
-    
+
     if (targetCol) {
       parameters.target_col = targetCol;
     }
 
     return this.performAnalysis({
-      analysis_type: 'prediction',
+      analysis_type: "prediction",
       collection_name: collectionName,
       parameters,
-      tags: ['prediction', 'sales-forecast'],
+      tags: ["prediction", "sales-forecast"],
     });
   }
 
@@ -196,20 +206,20 @@ class MLAnalyticsService {
     const parameters: Record<string, any> = {
       sample_size: sampleSize,
     };
-    
+
     if (dateCol) {
       parameters.date_col = dateCol;
     }
-    
+
     if (valueCol) {
       parameters.value_col = valueCol;
     }
 
     return this.performAnalysis({
-      analysis_type: 'timeseries',
+      analysis_type: "timeseries",
       collection_name: collectionName,
       parameters,
-      tags: ['timeseries', 'trend-analysis'],
+      tags: ["timeseries", "trend-analysis"],
     });
   }
 
@@ -218,17 +228,17 @@ class MLAnalyticsService {
    */
   async performAnomalyDetection(
     collectionName: string,
-    method: 'isolation' | 'statistical' = 'isolation',
+    method: "isolation" | "statistical" = "isolation",
     sampleSize: number = 1000
   ): Promise<MLAnalysisResult> {
     return this.performAnalysis({
-      analysis_type: 'anomaly',
+      analysis_type: "anomaly",
       collection_name: collectionName,
       parameters: {
         method,
         sample_size: sampleSize,
       },
-      tags: ['anomaly-detection', 'outliers'],
+      tags: ["anomaly-detection", "outliers"],
     });
   }
 
@@ -241,39 +251,51 @@ class MLAnalyticsService {
     recommendations: string[];
   } {
     const { analysis_type, ml_result } = result;
-    
+
     switch (analysis_type) {
-      case 'clustering':
+      case "clustering":
         return {
-          summary: `${ml_result.n_clusters}개 고객 그룹으로 세분화되었습니다. 실루엣 점수: ${ml_result.silhouette_score?.toFixed(2)}`,
+          summary: `${
+            ml_result.n_clusters
+          }개 고객 그룹으로 세분화되었습니다. 실루엣 점수: ${ml_result.silhouette_score?.toFixed(
+            2
+          )}`,
           insights: ml_result.insights || [],
           recommendations: ml_result.recommendations || [],
         };
-      
-      case 'prediction':
+
+      case "prediction":
         return {
-          summary: `매출 예측 모델의 정확도: ${ml_result.model_performance?.accuracy_percentage?.toFixed(1)}%`,
+          summary: `매출 예측 모델의 정확도: ${ml_result.model_performance?.accuracy_percentage?.toFixed(
+            1
+          )}%`,
           insights: ml_result.insights || [],
           recommendations: ml_result.recommendations || [],
         };
-      
-      case 'timeseries':
+
+      case "timeseries":
         return {
-          summary: `${ml_result.date_range?.days || 0}일간의 시계열 분석 완료. 트렌드: ${ml_result.trend?.direction || 'unknown'}`,
+          summary: `${
+            ml_result.date_range?.days || 0
+          }일간의 시계열 분석 완료. 트렌드: ${
+            ml_result.trend?.direction || "unknown"
+          }`,
           insights: ml_result.insights || [],
           recommendations: ml_result.recommendations || [],
         };
-      
-      case 'anomaly':
+
+      case "anomaly":
         return {
-          summary: `전체 데이터의 ${ml_result.anomaly_rate?.toFixed(1)}%에서 이상치가 발견되었습니다.`,
+          summary: `전체 데이터의 ${ml_result.anomaly_rate?.toFixed(
+            1
+          )}%에서 이상치가 발견되었습니다.`,
           insights: ml_result.insights || [],
           recommendations: ml_result.recommendations || [],
         };
-      
+
       default:
         return {
-          summary: '분석이 완료되었습니다.',
+          summary: "분석이 완료되었습니다.",
           insights: ml_result.insights || [],
           recommendations: ml_result.recommendations || [],
         };
@@ -283,35 +305,44 @@ class MLAnalyticsService {
   /**
    * 분석 유형별 추천 매개변수
    */
-  getRecommendedParameters(analysisType: string, collectionInfo: MLCollection): Record<string, any> {
+  getRecommendedParameters(
+    analysisType: string,
+    collectionInfo: MLCollection
+  ): Record<string, any> {
     switch (analysisType) {
-      case 'clustering':
-        const estimatedClusters = Math.min(Math.max(Math.floor(Math.sqrt(collectionInfo.document_count / 100)), 3), 10);
+      case "clustering":
+        const estimatedClusters = Math.min(
+          Math.max(
+            Math.floor(Math.sqrt(collectionInfo.document_count / 100)),
+            3
+          ),
+          10
+        );
         return {
           n_clusters: estimatedClusters,
           sample_size: Math.min(collectionInfo.document_count, 1000),
         };
-      
-      case 'prediction':
+
+      case "prediction":
         return {
-          target_col: collectionInfo.numeric_fields[0] || 'total_amount',
+          target_col: collectionInfo.numeric_fields[0] || "total_amount",
           days_ahead: 30,
           sample_size: Math.min(collectionInfo.document_count, 1000),
         };
-      
-      case 'timeseries':
+
+      case "timeseries":
         return {
-          date_col: 'created_at',
-          value_col: collectionInfo.numeric_fields[0] || 'total_amount',
+          date_col: "created_at",
+          value_col: collectionInfo.numeric_fields[0] || "total_amount",
           sample_size: Math.min(collectionInfo.document_count, 2000),
         };
-      
-      case 'anomaly':
+
+      case "anomaly":
         return {
-          method: 'isolation',
+          method: "isolation",
           sample_size: Math.min(collectionInfo.document_count, 1000),
         };
-      
+
       default:
         return {};
     }

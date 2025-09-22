@@ -366,7 +366,7 @@ class EnhancedImageSearchService:
             review_reliability = "매우 낮음"
         
         # 품질 예상 (가격과 평점 조합)
-        if rating >= 4.5 and price >= 80000:
+        if rating >= 4.5 and price >= 80800:
             quality_expectation = "프리미엄 품질"
         elif rating >= 4.0 and price >= 50000:
             quality_expectation = "고품질"
