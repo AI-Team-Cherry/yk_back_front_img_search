@@ -76,9 +76,9 @@ const BoardFormPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: 3, maxWidth: 800, mx: 'auto' }}>
+    <Box sx={{ p: 2, maxWidth: 600, mx: 'auto' }}>
       {/* 뒤로가기 버튼 */}
-      <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
+      <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
         <IconButton
           onClick={() => navigate(`/boards/${department}`)}
           sx={{
@@ -89,7 +89,7 @@ const BoardFormPage: React.FC = () => {
         >
           <ArrowBackIcon />
         </IconButton>
-        <Typography variant="h6" color="text.secondary">
+        <Typography variant="subtitle1" color="text.secondary">
           {currentDeptInfo.name} 상담 게시판
         </Typography>
       </Stack>
@@ -98,35 +98,35 @@ const BoardFormPage: React.FC = () => {
       <Paper
         elevation={0}
         sx={{
-          border: `2px solid ${currentDeptInfo.color}30`,
-          borderRadius: 3,
+          border: `1px solid ${currentDeptInfo.color}30`,
+          borderRadius: 2,
           overflow: 'hidden'
         }}
       >
         {/* 헤더 */}
         <Box
           sx={{
-            p: 4,
+            p: 2.5,
             background: `linear-gradient(135deg, ${currentDeptInfo.color}20 0%, ${currentDeptInfo.color}10 100%)`,
             borderBottom: `1px solid ${currentDeptInfo.color}30`
           }}
         >
-          <Stack direction="row" alignItems="center" spacing={3}>
+          <Stack direction="row" alignItems="center" spacing={2}>
             <Avatar
               sx={{
-                width: 64,
-                height: 64,
+                width: 48,
+                height: 48,
                 bgcolor: currentDeptInfo.color,
-                boxShadow: `0 8px 32px ${currentDeptInfo.color}40`
+                boxShadow: `0 4px 16px ${currentDeptInfo.color}40`
               }}
             >
-              <EditIcon sx={{ fontSize: 32 }} />
+              <EditIcon sx={{ fontSize: 24 }} />
             </Avatar>
             <Box>
-              <Typography variant="h4" fontWeight="bold" gutterBottom>
+              <Typography variant="h5" fontWeight="bold" gutterBottom>
                 새 상담 요청 작성
               </Typography>
-              <Typography variant="body1" color="text.secondary">
+              <Typography variant="body2" color="text.secondary">
                 {currentDeptInfo.name} 부서의 전문가들에게 질문하고 답변을 받아보세요
               </Typography>
             </Box>
@@ -134,8 +134,8 @@ const BoardFormPage: React.FC = () => {
         </Box>
 
         {/* 폼 내용 */}
-        <Box sx={{ p: 4 }}>
-          <Stack spacing={3}>
+        <Box sx={{ p: 3 }}>
+          <Stack spacing={2.5}>
             <Box>
               <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
                 상담 제목 *
@@ -170,7 +170,7 @@ const BoardFormPage: React.FC = () => {
               <TextField
                 fullWidth
                 multiline
-                rows={8}
+                rows={6}
                 placeholder="구체적인 상황과 질문 내용을 자세히 작성해주세요.&#10;더 자세한 정보를 제공할수록 정확한 답변을 받을 수 있습니다."
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
@@ -192,24 +192,24 @@ const BoardFormPage: React.FC = () => {
               />
             </Box>
 
-            <Box sx={{ borderTop: '1px solid #e0e0e0', pt: 3 }}>
+            <Box sx={{ borderTop: '1px solid #e0e0e0', pt: 2.5 }}>
               <Stack direction="row" spacing={2} justifyContent="flex-end">
                 <Button
                   variant="outlined"
-                  size="large"
+                  size="medium"
                   onClick={() => navigate(`/boards/${department}`)}
                   sx={{
                     borderColor: currentDeptInfo.color,
                     color: currentDeptInfo.color,
                     borderRadius: 2,
-                    px: 3
+                    px: 2.5
                   }}
                 >
                   취소
                 </Button>
                 <Button
                   variant="contained"
-                  size="large"
+                  size="medium"
                   startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
                   onClick={handleSubmit}
                   disabled={submitting || !title.trim() || !content.trim()}
@@ -217,8 +217,8 @@ const BoardFormPage: React.FC = () => {
                     bgcolor: currentDeptInfo.color,
                     '&:hover': { bgcolor: currentDeptInfo.color + 'DD' },
                     borderRadius: 2,
-                    px: 4,
-                    py: 1.5
+                    px: 3,
+                    py: 1
                   }}
                 >
                   {submitting ? "등록 중..." : "상담 요청 등록"}
