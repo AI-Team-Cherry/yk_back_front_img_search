@@ -7,7 +7,7 @@ from bson import ObjectId
 from app.db.mongodb import db
 from app.api.routes.auth import get_current_user
 
-router = APIRouter(prefix="/analytics", tags=["Analytics"])
+router = APIRouter(tags=["Analytics"])
 
 # Pydantic 모델 정의
 class AnalysisCreate(BaseModel):
@@ -279,6 +279,15 @@ async def share_analysis(
         return {"message": "분석이 성공적으로 공유되었습니다", "analysis_id": analysis_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"분석 공유 실패: {str(e)}")
+
+@router.get("/shared")
+async def get_shared_analyses_alias(
+    page: int = Query(1, ge=1),
+    limit: int = Query(100, ge=1, le=100)
+):
+    """공유된 분석 목록 조회 (페이지네이션 지원)"""
+    skip = (page - 1) * limit
+    return await get_shared_analyses(category=None, search=None, limit=limit, skip=skip)
 
 @router.get("/shared-analyses")
 async def get_shared_analyses(

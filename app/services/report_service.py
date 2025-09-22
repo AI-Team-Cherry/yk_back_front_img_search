@@ -5,13 +5,17 @@
 from typing import Dict, Any
 from datetime import datetime
 
+
 def generate_report(title: str, analysis_result: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    JSON 메타 리포트 생성 (API 응답용)
+    """
     return {
         "title": title,
         "createdAt": datetime.utcnow(),
         "summary": analysis_result.get("summary", ""),
         "details": {
             "insights": analysis_result.get("insights", ""),
-            "recommendations": analysis_result.get("recommendations", [])
-        }
+            "recommendations": analysis_result.get("recommendations", []),
+        },
     }

@@ -86,14 +86,14 @@ async def update_profile(user_update: UserUpdate, token: str = Depends(oauth2_sc
     payload = decode_access_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-    
+
     user_id = payload.get("sub")
-    
+
     # 업데이트할 데이터 준비 (None이 아닌 값만)
     update_data = {k: v for k, v in user_update.dict().items() if v is not None}
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
-    
+
     update_data["updatedAt"] = datetime.utcnow()
     
     # MongoDB 업데이트
