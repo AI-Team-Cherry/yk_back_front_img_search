@@ -246,6 +246,7 @@ def analyze(payload: dict = Body(...)):
         # COLAB_BASE_URL 확인
         print(f"[LLM] COLAB_BASE_URL: {COLAB_BASE_URL}")
         print(f"[LLM] COLAB_LLM_API: {COLAB_LLM_API}")
+        res = requests.post(COLAB_LLM_API, json={"query": question,"collections": collections}, timeout=6000)
 
         if not COLAB_BASE_URL:
             print("[LLM] ERROR: COLAB_BASE_URL is not set!")

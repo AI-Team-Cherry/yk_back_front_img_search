@@ -3,7 +3,6 @@ import {
   Box,
   Card,
   CardContent,
-  CardMedia,
   Typography,
   TextField,
   Button,
@@ -42,7 +41,9 @@ import {
   Clear,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
-import { searchImages, searchImagesByFile, listImages, ImageResult as APIImageResult, SearchResult as APISearchResult } from '../services/imageSearch';
+import { searchImages, searchImagesByFile, ImageResult as APIImageResult, SearchResult as APISearchResult } from '../services/imageSearch';
+import AnalysisCard from '../components/ai-fashion/AnalysisCard';
+import ImageDetailModal from '../components/ai-fashion/ImageDetailModal';
 
 // API에서 가져온 타입 사용
 type ImageResult = APIImageResult;
@@ -88,6 +89,8 @@ const ImageSearchPage: React.FC = () => {
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
   const [uploadedImagePreview, setUploadedImagePreview] = useState<string | null>(null);
   const [searchMode, setSearchMode] = useState<'text' | 'image'>('text');
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [modalImage, setModalImage] = useState<ImageResult | null>(null);
 
   // 추천 검색어 예시
   const suggestedQueries = [
@@ -229,6 +232,16 @@ const ImageSearchPage: React.FC = () => {
 
   const handleImageClick = (image: ImageResult) => {
     setSelectedImage(image);
+  };
+
+  const handleDetailView = (image: ImageResult) => {
+    setModalImage(image);
+    setDetailModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setDetailModalOpen(false);
+    setModalImage(null);
   };
 
   const handleDownload = (image: ImageResult) => {
@@ -458,48 +471,128 @@ const ImageSearchPage: React.FC = () => {
                   
                   <ImageList sx={{ width: '100%', height: 'auto' }} cols={3} gap={16}>
                     {result.images.map((image) => (
-                      <ImageListItem 
-                        key={image.id}
-                        sx={{ 
-                          cursor: 'pointer',
-                          transition: 'transform 0.2s',
-                          '&:hover': {
-                            transform: 'scale(1.05)',
-                            boxShadow: 3,
-                          },
-                          height: '300px'
-                        }}
-                        onClick={() => handleImageClick(image)}
-                      >
-                        <img
-                          src={image.url}
-                          alt={image.title}
-                          loading="lazy"
-                          style={{
-                            width: '100%',
-                            height: '100%',
-                            objectFit: 'cover'
+                        <ImageListItem 
+                          key={image.id}
+                          sx={{ 
+                            cursor: 'pointer',
+                            transition: 'transform 0.2s',
+                            '&:hover': {
+                              transform: 'scale(1.02)',
+                              boxShadow: 2,
+                            },
+                            height: 'auto',
+                            minHeight: '380px'
                           }}
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x400?text=Image+Not+Found';
-                          }}
-                        />
-                        <ImageListItemBar
-                          title={image.title}
-                          subtitle={
-                            <span>
-                              {image.description || `관련도: ${((image.relevance || 0) * 100).toFixed(0)}%`}
-                            </span>
-                          }
-                          actionIcon={
-                            <IconButton
-                              sx={{ color: 'rgba(255, 255, 255, 0.54)' }}
-                              aria-label={`info about ${image.title}`}
+                          onClick={() => handleImageClick(image)}
+                        >
+                        <Box sx={{ position: 'relative' }}>
+                          <img
+                            src={image.url}
+                            alt={image.title}
+                            loading="lazy"
+                            style={{
+                              width: '100%',
+                              height: '220px',
+                              objectFit: 'cover'
+                            }}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x250?text=Image+Not+Found';
+                            }}
+                          />
+                          {/* 호버 시 확대 아이콘 */}
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 8,
+                              right: 8,
+                              bgcolor: 'rgba(0,0,0,0.5)',
+                              borderRadius: '50%',
+                              p: 0.5,
+                              opacity: 0,
+                              transition: 'opacity 0.2s',
+                              '&:hover': {
+                                opacity: 1
+                              }
+                            }}
+                          >
+                            <ZoomIn sx={{ color: 'white', fontSize: 20 }} />
+                          </Box>
+                        </Box>
+                        
+                        {/* 이미지 하단 정보 카드 */}
+                        <Box sx={{ p: 1.5, bgcolor: 'background.paper' }}>
+                          {/* 상품명 */}
+                          <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1, lineHeight: 1.2 }}>
+                            {image.product_name || image.title}
+                          </Typography>
+                          
+                          {/* 기본 정보 - 한 줄로 정리 */}
+                          <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'wrap' }}>
+                            {image.brand && (
+                              <Chip label={image.brand} size="small" variant="outlined" sx={{ fontSize: '0.7rem', height: 20 }} />
+                            )}
+                            {image.price && (
+                              <Chip 
+                                label={`${image.price.toLocaleString()}원`} 
+                                size="small" 
+                                color="primary" 
+                                sx={{ fontSize: '0.7rem', height: 20 }}
+                              />
+                            )}
+                            {image.rating_avg && (
+                              <Chip 
+                                label={`${image.rating_avg}점`} 
+                                size="small" 
+                                color="secondary" 
+                                sx={{ fontSize: '0.7rem', height: 20 }}
+                              />
+                            )}
+                          </Box>
+
+                          {/* AI 정보 + 상세 보기 버튼 - 한 줄로 정리 */}
+                          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <Box sx={{ display: 'flex', gap: 0.5 }}>
+                              {image.similarity && (
+                                <Chip 
+                                  label={`유사도 ${(image.similarity * 100).toFixed(1)}%`} 
+                                  size="small" 
+                                  variant="outlined"
+                                  color="info"
+                                  sx={{ fontSize: '0.7rem', height: 24 }}
+                                />
+                              )}
+                              {image.detailed_analysis?.overall_rating?.grade && (
+                                <Chip 
+                                  label={`${image.detailed_analysis.overall_rating.grade}급`}
+                                  size="small"
+                                  sx={{ 
+                                    bgcolor: 'success.main', 
+                                    color: 'white',
+                                    fontWeight: 'bold',
+                                    fontSize: '0.7rem',
+                                    height: 24
+                                  }}
+                                />
+                              )}
+                            </Box>
+                            
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDetailView(image);
+                              }}
+                              sx={{ 
+                                fontSize: '0.7rem',
+                                height: 24,
+                                px: 1
+                              }}
                             >
-                              <ZoomIn />
-                            </IconButton>
-                          }
-                        />
+                              상세보기
+                            </Button>
+                          </Box>
+                        </Box>
                       </ImageListItem>
                     ))}
                   </ImageList>
@@ -520,8 +613,40 @@ const ImageSearchPage: React.FC = () => {
                         </Grid>
                         <Grid item xs={12} md={8}>
                           <Typography variant="h6" gutterBottom>
-                            {selectedImage.title}
+                            {selectedImage.product_name || selectedImage.title}
                           </Typography>
+                          
+                          {/* 기본 정보 표시 */}
+                          <Box sx={{ mb: 2 }}>
+                            {selectedImage.brand && (
+                              <Chip label={selectedImage.brand} size="small" sx={{ mr: 1, mb: 1 }} />
+                            )}
+                            {selectedImage.price && (
+                              <Chip 
+                                label={`${selectedImage.price.toLocaleString()}원`} 
+                                size="small" 
+                                color="primary" 
+                                sx={{ mr: 1, mb: 1 }} 
+                              />
+                            )}
+                            {selectedImage.rating_avg && (
+                              <Chip 
+                                label={`평점 ${selectedImage.rating_avg}점`} 
+                                size="small" 
+                                color="secondary" 
+                                sx={{ mr: 1, mb: 1 }} 
+                              />
+                            )}
+                            {selectedImage.similarity && (
+                              <Chip 
+                                label={`유사도 ${(selectedImage.similarity * 100).toFixed(1)}%`} 
+                                size="small" 
+                                variant="outlined"
+                                sx={{ mr: 1, mb: 1 }} 
+                              />
+                            )}
+                          </Box>
+                          
                           {selectedImage.description && (
                             <Typography variant="body2" color="textSecondary" paragraph>
                               {selectedImage.description}
@@ -546,6 +671,18 @@ const ImageSearchPage: React.FC = () => {
                           </Box>
                         </Grid>
                       </Grid>
+                      
+                      {/* AI 분석 정보 표시 */}
+                      {selectedImage.detailed_analysis && (
+                        <Box sx={{ mt: 3 }}>
+                          <Divider sx={{ mb: 2 }} />
+                          <AnalysisCard 
+                            analysis={selectedImage.detailed_analysis}
+                            productName={selectedImage.product_name}
+                            brand={selectedImage.brand}
+                          />
+                        </Box>
+                      )}
                     </Paper>
                   )}
                 </CardContent>
@@ -601,6 +738,14 @@ const ImageSearchPage: React.FC = () => {
           </Card>
         </Grid>
       </Grid>
+
+      {/* 상세 분석 모달 */}
+      <ImageDetailModal
+        open={detailModalOpen}
+        onClose={handleCloseModal}
+        image={modalImage}
+        onDownload={handleDownload}
+      />
     </Box>
   );
 };

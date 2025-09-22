@@ -47,11 +47,13 @@ cd ..
 두 개의 터미널을 열어서 다음을 실행하세요:
 
 **터미널 1 (백엔드):**
+
 ```bash
 start-backend.bat
 ```
 
 **터미널 2 (프론트엔드):**
+
 ```bash
 start-frontend.bat
 ```
@@ -59,8 +61,8 @@ start-frontend.bat
 ### 4. 접속
 
 - 프론트엔드: http://localhost:3000
-- 백엔드 API: http://localhost:8001
-- API 문서: http://localhost:8001/docs
+- 백엔드 API: http://localhost:8080
+- API 문서: http://localhost:8080/docs
 
 ---
 
@@ -106,20 +108,23 @@ start-frontend.bat
 ### "python을 찾을 수 없습니다"
 
 Python이 PATH에 추가되지 않았습니다:
+
 1. Python을 다시 설치하고 "Add to PATH" 옵션 선택
 2. 또는 환경변수를 수동으로 추가
 
 ### "node를 찾을 수 없습니다"
 
 Node.js가 설치되지 않았습니다:
+
 1. Node.js 공식 사이트에서 LTS 버전 설치
 
 ### 포트 충돌 오류
 
 다른 프로그램이 포트를 사용 중입니다:
+
 ```bash
 # 포트 사용 확인
-netstat -ano | findstr :8001
+netstat -ano | findstr :8080
 netstat -ano | findstr :3000
 
 # 프로세스 종료 (PID 확인 후)
@@ -140,7 +145,7 @@ taskkill /PID [PID번호] /F
 
 1. [README.md](README.md)에서 전체 기능 살펴보기
 2. http://localhost:3000 에서 회원가입 후 플랫폼 사용해보기
-3. http://localhost:8001/docs 에서 API 문서 확인하기
+3. http://localhost:8080/docs 에서 API 문서 확인하기
 
 ---
 

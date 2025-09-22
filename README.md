@@ -9,17 +9,20 @@ MongoDB 데이터를 기반으로 한 스마트 AI 분석 플랫폼입니다. �
 **이것만 따라하세요! Windows 기준입니다.**
 
 ### 📌 1단계: 필수 프로그램 설치
+
 1. [Python](https://www.python.org/downloads/) 설치 (설치할 때 **"Add Python to PATH"** 체크!)
 2. [Node.js](https://nodejs.org/) 설치 (LTS 버전)
 3. [Git](https://git-scm.com/download/win) 설치
 
 ### 📌 2단계: 프로젝트 다운로드
+
 ```bash
 git clone https://github.com/your-username/ai-analytics-platform.git
 cd ai-analytics-platform
 ```
 
 ### 📌 3단계: 환경 설정
+
 ```bash
 # 1. Python 가상환경 만들기
 python -m venv venv
@@ -37,7 +40,9 @@ copy .env.example .env
 **⚠️ 중요: `.env` 파일을 메모장으로 열어서 MongoDB 주소를 본인 것으로 수정하세요!**
 
 ### 📌 4단계: 프론트엔드 설정
+
 **새 터미널 창을 여세요!**
+
 ```bash
 # 1. frontend 폴더로 이동
 cd frontend
@@ -50,19 +55,23 @@ cd ..
 ```
 
 ### 📌 5단계: 실행
+
 **터미널 2개가 필요합니다!**
 
 **터미널 1:**
+
 ```bash
 start-backend.bat
 ```
 
 **터미널 2:**
+
 ```bash
 start-frontend.bat
 ```
 
 ### 📌 6단계: 접속
+
 브라우저를 열고 http://localhost:3000 접속!
 
 ### ✅ 끝!
@@ -84,6 +93,7 @@ start-frontend.bat
 ## 🛠️ 기술 스택
 
 ### 백엔드
+
 - **FastAPI** - 고성능 Python 웹 프레임워크
 - **MongoDB Atlas** - 클라우드 데이터베이스
 - **Motor** - 비동기 MongoDB 드라이버
@@ -91,6 +101,7 @@ start-frontend.bat
 - **Uvicorn** - ASGI 서버
 
 ### 프론트엔드
+
 - **React 18** + **TypeScript**
 - **Material-UI (MUI)** - UI 컴포넌트 라이브러리
 - **React Router** - 라우팅
@@ -159,27 +170,30 @@ cd frontend
 npm install
 
 # 환경변수 설정 (frontend/.env.development)
-echo "REACT_APP_API_URL=http://localhost:8001" > .env.development
+echo "REACT_APP_API_URL=http://localhost:8080" > .env.development
 ```
 
 ### 5. 실행
 
 **백엔드 실행:**
+
 ```bash
 # 프로젝트 루트에서
-uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
 ```
 
 **프론트엔드 실행:**
+
 ```bash
 # frontend 디렉토리에서
 npm start
 ```
 
 서버가 정상적으로 실행되면:
-- 백엔드: http://localhost:8001
+
+- 백엔드: http://localhost:8080
 - 프론트엔드: http://localhost:3000
-- API 문서: http://localhost:8001/docs
+- API 문서: http://localhost:8080/docs
 
 ---
 
@@ -228,19 +242,23 @@ yk_back_front_img_search/
 ## 🔧 주요 API 엔드포인트
 
 ### 인증
+
 - `POST /auth/login` - 로그인
 - `POST /auth/register` - 회원가입
 - `GET /auth/me` - 현재 사용자 정보
 - `PUT /auth/profile` - 프로필 업데이트
 
 ### 컬렉션 관리
+
 - `GET /api/collections` - MongoDB 컬렉션 목록
 - `GET /api/collections/{collection_name}/info` - 컬렉션 정보
 
 ### AI 분석
+
 - `POST /llm-analysis/analyze` - 자연어 AI 분석
 
 ### 기타
+
 - `GET /health` - 서버 상태 확인
 - `GET /docs` - API 문서 (Swagger UI)
 
@@ -251,6 +269,7 @@ yk_back_front_img_search/
 2. **컬렉션 선택**: 오른쪽 패널에서 분석하고 싶은 MongoDB 컬렉션을 선택합니다. (다중 선택 가능)
 
 3. **AI 질문**: 자연어로 질문을 입력합니다.
+
    - 예: "최근 한 달간 가장 인기있는 상품 카테고리는 무엇인가요?"
    - 예: "신규 가입자 중에서 30일 안에 첫 구매할 확률 높은 사람들 리스트 뽑아줘"
 
@@ -263,10 +282,12 @@ yk_back_front_img_search/
 ## 🔒 보안 설정
 
 ### JWT 토큰
+
 - 액세스 토큰은 30분 후 만료됩니다.
 - `SECRET_KEY`는 반드시 강력한 키로 설정하세요.
 
 ### CORS 설정
+
 현재 개발 환경용으로 설정되어 있습니다. 프로덕션 환경에서는 `app/main.py`의 CORS 설정을 수정하세요.
 
 ## 🐛 문제 해결
@@ -274,32 +295,39 @@ yk_back_front_img_search/
 ### 일반적인 문제들
 
 **1. MongoDB 연결 오류**
+
 ```
 pymongo.errors.ServerSelectionTimeoutError
 ```
+
 - `.env` 파일의 `MONGO_URI` 확인
 - MongoDB Atlas 네트워크 접근 설정 확인
 - 방화벽 설정 확인
 
 **2. 프론트엔드 API 연결 오류**
+
 ```
 CORS policy error
 ```
-- 백엔드가 8001 포트에서 실행 중인지 확인
+
+- 백엔드가 8080 포트에서 실행 중인지 확인
 - `frontend/.env.development` 파일 확인
 
 **3. 패키지 설치 오류**
+
 ```
 pip install 실패
 ```
+
 - Python 버전 확인 (3.8 이상)
 - 가상환경 활성화 확인
 
 ### 로그 확인
 
 **백엔드 로그:**
+
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload --log-level debug
+uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload --log-level debug
 ```
 
 **프론트엔드 로그:**

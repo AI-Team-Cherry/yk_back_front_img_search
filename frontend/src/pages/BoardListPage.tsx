@@ -55,7 +55,8 @@ const BoardListPage: React.FC = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const currentDeptInfo = departments.find(d => d.code === currentDept) || departments[0];
+  const currentDeptInfo =
+    departments.find((d) => d.code === currentDept) || departments[0];
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -82,7 +83,7 @@ const BoardListPage: React.FC = () => {
           mb: 2,
           background: `linear-gradient(135deg, ${currentDeptInfo.color}20 0%, ${currentDeptInfo.color}10 100%)`,
           border: `1px solid ${currentDeptInfo.color}30`,
-          borderRadius: 2
+          borderRadius: 2,
         }}
       >
         <Stack direction="row" alignItems="center" spacing={2}>
@@ -91,7 +92,7 @@ const BoardListPage: React.FC = () => {
               width: 48,
               height: 48,
               bgcolor: currentDeptInfo.color,
-              boxShadow: `0 4px 16px ${currentDeptInfo.color}40`
+              boxShadow: `0 4px 16px ${currentDeptInfo.color}40`,
             }}
           >
             <ForumIcon sx={{ fontSize: 24 }} />
@@ -111,10 +112,10 @@ const BoardListPage: React.FC = () => {
             onClick={() => navigate(`/boards/${currentDept}/new`)}
             sx={{
               bgcolor: currentDeptInfo.color,
-              '&:hover': { bgcolor: currentDeptInfo.color + 'DD' },
+              "&:hover": { bgcolor: currentDeptInfo.color + "DD" },
               borderRadius: 2,
               px: 2,
-              py: 1
+              py: 1,
             }}
           >
             새 상담 요청
@@ -129,11 +130,11 @@ const BoardListPage: React.FC = () => {
           onChange={(e, val) => navigate(`/boards/${val}`)}
           variant="fullWidth"
           sx={{
-            '& .MuiTab-root': {
+            "& .MuiTab-root": {
               minHeight: 48,
-              fontSize: '0.9rem',
-              fontWeight: 600
-            }
+              fontSize: "0.9rem",
+              fontWeight: 600,
+            },
           }}
         >
           {departments.map((dept) => (
@@ -147,9 +148,9 @@ const BoardListPage: React.FC = () => {
                 </Stack>
               }
               sx={{
-                '&.Mui-selected': {
-                  color: dept.color
-                }
+                "&.Mui-selected": {
+                  color: dept.color,
+                },
               }}
             />
           ))}
@@ -166,12 +167,12 @@ const BoardListPage: React.FC = () => {
           elevation={0}
           sx={{
             p: 4,
-            textAlign: 'center',
-            border: '2px dashed #e0e0e0',
-            borderRadius: 2
+            textAlign: "center",
+            border: "2px dashed #e0e0e0",
+            borderRadius: 2,
           }}
         >
-          <ForumIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+          <ForumIcon sx={{ fontSize: 48, color: "text.secondary", mb: 2 }} />
           <Typography variant="h6" color="text.secondary" gutterBottom>
             아직 게시된 상담 요청이 없습니다
           </Typography>
@@ -196,41 +197,69 @@ const BoardListPage: React.FC = () => {
                 elevation={0}
                 sx={{
                   height: "100%",
-                  border: '1px solid #e0e0e0',
+                  border: "1px solid #e0e0e0",
                   borderRadius: 2,
-                  transition: 'all 0.2s ease-in-out',
-                  '&:hover': {
-                    transform: 'translateY(-2px)',
+                  transition: "all 0.2s ease-in-out",
+                  "&:hover": {
+                    transform: "translateY(-2px)",
                     boxShadow: `0 4px 15px ${currentDeptInfo.color}20`,
-                    borderColor: currentDeptInfo.color
-                  }
+                    borderColor: currentDeptInfo.color,
+                  },
                 }}
               >
                 <CardActionArea
                   onClick={() => navigate(`/boards/${currentDept}/${post._id}`)}
-                  sx={{ height: '100%', p: 0 }}
+                  sx={{ height: "100%", p: 0 }}
                 >
-                  <CardContent sx={{ p: 2, height: '100%', display: 'flex', flexDirection: 'column' }}>
+                  <CardContent
+                    sx={{
+                      p: 2,
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                    }}
+                  >
                     {/* 헤더 */}
-                    <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 1.5 }}>
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      spacing={1.5}
+                      sx={{ mb: 1.5 }}
+                    >
                       <Avatar
                         sx={{
                           width: 32,
                           height: 32,
-                          bgcolor: currentDeptInfo.color + '20',
-                          color: currentDeptInfo.color
+                          bgcolor: currentDeptInfo.color + "20",
+                          color: currentDeptInfo.color,
                         }}
                       >
                         <PersonIcon sx={{ fontSize: 18 }} />
                       </Avatar>
                       <Box sx={{ flex: 1 }}>
-                        <Typography variant="subtitle2" fontWeight="bold" fontSize="0.875rem">
+                        <Typography
+                          variant="subtitle2"
+                          fontWeight="bold"
+                          fontSize="0.875rem"
+                        >
                           {post.author}
                         </Typography>
-                        <Stack direction="row" alignItems="center" spacing={0.5}>
-                          <TimeIcon sx={{ fontSize: 12, color: 'text.secondary' }} />
-                          <Typography variant="caption" color="text.secondary" fontSize="0.75rem">
-                            {new Date(post.created_at).toLocaleDateString('ko-KR')}
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          spacing={0.5}
+                        >
+                          <TimeIcon
+                            sx={{ fontSize: 12, color: "text.secondary" }}
+                          />
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            fontSize="0.75rem"
+                          >
+                            {new Date(post.created_at).toLocaleDateString(
+                              "ko-KR"
+                            )}
                           </Typography>
                         </Stack>
                       </Box>
@@ -238,11 +267,11 @@ const BoardListPage: React.FC = () => {
                         label={post.department}
                         size="small"
                         sx={{
-                          bgcolor: currentDeptInfo.color + '20',
+                          bgcolor: currentDeptInfo.color + "20",
                           color: currentDeptInfo.color,
                           fontWeight: 600,
-                          fontSize: '0.75rem',
-                          height: 24
+                          fontSize: "0.75rem",
+                          height: 24,
                         }}
                       />
                     </Stack>
@@ -251,7 +280,12 @@ const BoardListPage: React.FC = () => {
 
                     {/* 내용 */}
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="subtitle1" fontWeight="bold" gutterBottom fontSize="1rem">
+                      <Typography
+                        variant="subtitle1"
+                        fontWeight="bold"
+                        gutterBottom
+                        fontSize="1rem"
+                      >
                         {post.title}
                       </Typography>
                       <Typography
@@ -259,11 +293,11 @@ const BoardListPage: React.FC = () => {
                         color="text.secondary"
                         fontSize="0.875rem"
                         sx={{
-                          display: '-webkit-box',
+                          display: "-webkit-box",
                           WebkitLineClamp: 2,
-                          WebkitBoxOrient: 'vertical',
-                          overflow: 'hidden',
-                          lineHeight: 1.4
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                          lineHeight: 1.4,
                         }}
                       >
                         {post.content}

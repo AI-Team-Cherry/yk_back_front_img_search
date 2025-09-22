@@ -2,7 +2,17 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import {
-  Box, TextField, Button, Typography, Snackbar, Alert, Paper, Stack, Avatar, IconButton, CircularProgress,
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Snackbar,
+  Alert,
+  Paper,
+  Stack,
+  Avatar,
+  IconButton,
+  CircularProgress,
 } from "@mui/material";
 import {
   ArrowBack as ArrowBackIcon,
@@ -15,7 +25,9 @@ import {
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 
+
 const API_BASE = (process.env.REACT_APP_API_BASE_URL || "http://localhost:8080").replace(/\/+$/,"");
+
 
 const departments = [
   { code: "MD", name: "마케팅", icon: <CampaignIcon />, color: "#2196F3" },
@@ -34,7 +46,8 @@ const BoardFormPage: React.FC = () => {
   const [openSnackbar, setOpenSnackbar] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const currentDeptInfo = departments.find(d => d.code === department) || departments[0];
+  const currentDeptInfo =
+    departments.find((d) => d.code === department) || departments[0];
 
   useEffect(() => {
     console.log("🧭 [BoardForm] department param:", department);
@@ -42,7 +55,10 @@ const BoardFormPage: React.FC = () => {
     console.log("👤 [BoardForm] user:", user);
 
     // ChatbotPopup에서 전달된 prefill 내용 처리
-    const state = location.state as { prefillTitle?: string; prefillContent?: string } | null;
+    const state = location.state as {
+      prefillTitle?: string;
+      prefillContent?: string;
+    } | null;
     if (state?.prefillTitle) {
       setTitle(state.prefillTitle);
     }
@@ -61,7 +77,14 @@ const BoardFormPage: React.FC = () => {
     const url = `${API_BASE}/boards/${department}`;
     const body = { title, content };
 
-    console.log("➡️ [BoardForm] POST", url, "headers:", authHeaders, "body:", body);
+    console.log(
+      "➡️ [BoardForm] POST",
+      url,
+      "headers:",
+      authHeaders,
+      "body:",
+      body
+    );
 
     try {
       const res = await axios.post(url, body, { headers: authHeaders });
@@ -69,22 +92,26 @@ const BoardFormPage: React.FC = () => {
       setOpenSnackbar(true);
       setTimeout(() => navigate(`/boards/${department}`), 1500);
     } catch (e: any) {
-      console.error("❌ [BoardForm] 등록 실패:", e?.response?.status, e?.response?.data || e?.message);
+      console.error(
+        "❌ [BoardForm] 등록 실패:",
+        e?.response?.status,
+        e?.response?.data || e?.message
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <Box sx={{ p: 2, maxWidth: 600, mx: 'auto' }}>
+    <Box sx={{ p: 2, maxWidth: 600, mx: "auto" }}>
       {/* 뒤로가기 버튼 */}
       <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
         <IconButton
           onClick={() => navigate(`/boards/${department}`)}
           sx={{
-            bgcolor: currentDeptInfo.color + '20',
+            bgcolor: currentDeptInfo.color + "20",
             color: currentDeptInfo.color,
-            '&:hover': { bgcolor: currentDeptInfo.color + '30' }
+            "&:hover": { bgcolor: currentDeptInfo.color + "30" },
           }}
         >
           <ArrowBackIcon />
@@ -100,7 +127,7 @@ const BoardFormPage: React.FC = () => {
         sx={{
           border: `1px solid ${currentDeptInfo.color}30`,
           borderRadius: 2,
-          overflow: 'hidden'
+          overflow: "hidden",
         }}
       >
         {/* 헤더 */}
@@ -108,7 +135,7 @@ const BoardFormPage: React.FC = () => {
           sx={{
             p: 2.5,
             background: `linear-gradient(135deg, ${currentDeptInfo.color}20 0%, ${currentDeptInfo.color}10 100%)`,
-            borderBottom: `1px solid ${currentDeptInfo.color}30`
+            borderBottom: `1px solid ${currentDeptInfo.color}30`,
           }}
         >
           <Stack direction="row" alignItems="center" spacing={2}>
@@ -117,7 +144,7 @@ const BoardFormPage: React.FC = () => {
                 width: 48,
                 height: 48,
                 bgcolor: currentDeptInfo.color,
-                boxShadow: `0 4px 16px ${currentDeptInfo.color}40`
+                boxShadow: `0 4px 16px ${currentDeptInfo.color}40`,
               }}
             >
               <EditIcon sx={{ fontSize: 24 }} />
@@ -127,7 +154,8 @@ const BoardFormPage: React.FC = () => {
                 새 상담 요청 작성
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {currentDeptInfo.name} 부서의 전문가들에게 질문하고 답변을 받아보세요
+                {currentDeptInfo.name} 부서의 전문가들에게 질문하고 답변을
+                받아보세요
               </Typography>
             </Box>
           </Stack>
@@ -146,19 +174,19 @@ const BoardFormPage: React.FC = () => {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 sx={{
-                  '& .MuiOutlinedInput-root': {
+                  "& .MuiOutlinedInput-root": {
                     borderRadius: 2,
-                    '&:hover': {
-                      '& > fieldset': {
-                        borderColor: currentDeptInfo.color
-                      }
+                    "&:hover": {
+                      "& > fieldset": {
+                        borderColor: currentDeptInfo.color,
+                      },
                     },
-                    '&.Mui-focused': {
-                      '& > fieldset': {
-                        borderColor: currentDeptInfo.color
-                      }
-                    }
-                  }
+                    "&.Mui-focused": {
+                      "& > fieldset": {
+                        borderColor: currentDeptInfo.color,
+                      },
+                    },
+                  },
                 }}
               />
             </Box>
@@ -175,24 +203,24 @@ const BoardFormPage: React.FC = () => {
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
                 sx={{
-                  '& .MuiOutlinedInput-root': {
+                  "& .MuiOutlinedInput-root": {
                     borderRadius: 2,
-                    '&:hover': {
-                      '& > fieldset': {
-                        borderColor: currentDeptInfo.color
-                      }
+                    "&:hover": {
+                      "& > fieldset": {
+                        borderColor: currentDeptInfo.color,
+                      },
                     },
-                    '&.Mui-focused': {
-                      '& > fieldset': {
-                        borderColor: currentDeptInfo.color
-                      }
-                    }
-                  }
+                    "&.Mui-focused": {
+                      "& > fieldset": {
+                        borderColor: currentDeptInfo.color,
+                      },
+                    },
+                  },
                 }}
               />
             </Box>
 
-            <Box sx={{ borderTop: '1px solid #e0e0e0', pt: 2.5 }}>
+            <Box sx={{ borderTop: "1px solid #e0e0e0", pt: 2.5 }}>
               <Stack direction="row" spacing={2} justifyContent="flex-end">
                 <Button
                   variant="outlined"
@@ -202,7 +230,7 @@ const BoardFormPage: React.FC = () => {
                     borderColor: currentDeptInfo.color,
                     color: currentDeptInfo.color,
                     borderRadius: 2,
-                    px: 2.5
+                    px: 2.5,
                   }}
                 >
                   취소
@@ -210,15 +238,21 @@ const BoardFormPage: React.FC = () => {
                 <Button
                   variant="contained"
                   size="medium"
-                  startIcon={submitting ? <CircularProgress size={16} color="inherit" /> : <SendIcon />}
+                  startIcon={
+                    submitting ? (
+                      <CircularProgress size={16} color="inherit" />
+                    ) : (
+                      <SendIcon />
+                    )
+                  }
                   onClick={handleSubmit}
                   disabled={submitting || !title.trim() || !content.trim()}
                   sx={{
                     bgcolor: currentDeptInfo.color,
-                    '&:hover': { bgcolor: currentDeptInfo.color + 'DD' },
+                    "&:hover": { bgcolor: currentDeptInfo.color + "DD" },
                     borderRadius: 2,
                     px: 3,
-                    py: 1
+                    py: 1,
                   }}
                 >
                   {submitting ? "등록 중..." : "상담 요청 등록"}
@@ -233,14 +267,14 @@ const BoardFormPage: React.FC = () => {
         open={openSnackbar}
         autoHideDuration={2000}
         onClose={() => setOpenSnackbar(false)}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
         <Alert
           severity="success"
           sx={{
             width: "100%",
             borderRadius: 2,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+            boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
           }}
         >
           상담 요청이 성공적으로 등록되었습니다!

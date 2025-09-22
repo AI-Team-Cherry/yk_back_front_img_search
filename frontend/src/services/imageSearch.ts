@@ -1,17 +1,19 @@
-import axios from 'axios';
+import axios from "axios";
+
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+
 
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
 // 인증 토큰 추가
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem("token");
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -26,6 +28,13 @@ export interface ImageResult {
   description?: string;
   tags?: string[];
   relevance?: number;
+  // 새로운 AI 분석 속성들
+  similarity?: number;
+  product_name?: string;
+  price?: number;
+  rating_avg?: number;
+  brand?: string;
+  detailed_analysis?: any;
 }
 
 export interface SearchResult {
@@ -36,23 +45,28 @@ export interface SearchResult {
 }
 
 // 이미지 검색 API
-export const searchImages = async (query: string, limit: number = 20): Promise<SearchResult> => {
+export const searchImages = async (
+  query: string,
+  limit: number = 20
+): Promise<SearchResult> => {
   try {
-    const response = await api.get('/api/images/search', {
-      params: { q: query, limit }
+    const response = await api.get("/api/images/search", {
+      params: { q: query, limit },
     });
-    
+
     // URL을 절대 경로로 변환
     const result = response.data;
     result.images = result.images.map((img: ImageResult) => ({
       ...img,
-      url: `${API_BASE_URL}${img.url}`
+      url: `${API_BASE_URL}${img.url}`,
     }));
-    
+
     return result;
   } catch (error: any) {
-    console.error('Image search error:', error);
-    throw new Error(error.response?.data?.detail || '이미지 검색에 실패했습니다.');
+    console.error("Image search error:", error);
+    throw new Error(
+      error.response?.data?.detail || "이미지 검색에 실패했습니다."
+    );
   }
 };
 
@@ -60,11 +74,11 @@ export const searchImages = async (query: string, limit: number = 20): Promise<S
 export const searchImagesByFile = async (file: File): Promise<SearchResult> => {
   try {
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
-    const response = await api.post('/api/images/search-by-image', formData, {
+    const response = await api.post("/api/images/search-by-image", formData, {
       headers: {
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
       },
     });
 
@@ -72,33 +86,37 @@ export const searchImagesByFile = async (file: File): Promise<SearchResult> => {
     const result = response.data;
     result.images = result.images.map((img: ImageResult) => ({
       ...img,
-      url: `${API_BASE_URL}${img.url}`
+      url: `${API_BASE_URL}${img.url}`,
     }));
 
     return result;
   } catch (error: any) {
-    console.error('Image file search error:', error);
-    throw new Error(error.response?.data?.detail || '이미지 파일 검색에 실패했습니다.');
+    console.error("Image file search error:", error);
+    throw new Error(
+      error.response?.data?.detail || "이미지 파일 검색에 실패했습니다."
+    );
   }
 };
 
 // 이미지 목록 조회 API
 export const listImages = async (limit: number = 20): Promise<SearchResult> => {
   try {
-    const response = await api.get('/api/images/list', {
-      params: { limit }
+    const response = await api.get("/api/images/list", {
+      params: { limit },
     });
 
     // URL을 절대 경로로 변환
     const result = response.data;
     result.images = result.images.map((img: ImageResult) => ({
       ...img,
-      url: `${API_BASE_URL}${img.url}`
+      url: `${API_BASE_URL}${img.url}`,
     }));
 
     return result;
   } catch (error: any) {
-    console.error('Image list error:', error);
-    throw new Error(error.response?.data?.detail || '이미지 목록 조회에 실패했습니다.');
+    console.error("Image list error:", error);
+    throw new Error(
+      error.response?.data?.detail || "이미지 목록 조회에 실패했습니다."
+    );
   }
 };
