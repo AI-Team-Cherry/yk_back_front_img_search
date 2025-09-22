@@ -4,10 +4,9 @@ from fastapi.responses import FileResponse
 from typing import Optional, List
 from pathlib import Path
 import os
-import tempfile
-import shutil
+import io
 
-from app.services.image_gen import generate_image
+from app.services.image_gen import generate_image, EnhancedImageSearchService
 from app.services.gemini_service import gemini_service
 from app.utils.translate import translate_fashion_query_ko2en  # 한국어 쿼리 번역 유틸
 
@@ -63,26 +62,56 @@ async def list_images(
             if f.endswith(".jpg") and not f.endswith(".jpg:Zone.Identifier")
         ]
 
-        # 파일명 기반 간단 검색
+        # AI 검색 사용 (실제 유사도 점수 기반)
         if query_used:
-            image_files = [f for f in image_files if query_used.lower() in f.lower()]
-
-        # limit 적용
-        image_files = image_files[:limit]
-
-        images = []
-        for idx, filename in enumerate(image_files):
-            base_name = filename[:-4]  # .jpg 제거
-            parts = base_name.split("_")
-            images.append({
-                "id": str(idx + 1),
-                "filename": filename,
-                "url": f"/api/images/file/{filename}",
-                "title": f"상품 {parts[0]}" if parts else filename,
-                "description": f"이미지 번호: {base_name}",
-                "tags": [f"상품번호_{parts[0]}"] if parts else [],
-                "relevance": 0.95 - (idx * 0.05),
-            })
+            from app.services.image_gen import generate_image
+            result = await generate_image(query_used, limit)
+            images = result.get("images", [])
+            
+            # 실제 상품 메타데이터 추가
+            product_df = None
+            try:
+                import pandas as pd
+                product_df = pd.read_csv("app/img_search/product.csv")
+            except Exception as e:
+                print(f"상품 메타데이터 로드 실패: {e}")
+            
+            # 각 이미지에 실제 메타데이터 추가
+            for image in images:
+                filename = image.get("filename", "")
+                base_name = filename[:-4] if filename.endswith(".jpg") else filename
+                parts = base_name.split("_")
+                product_id = parts[0] if parts else ""
+                
+                if product_df is not None and product_id:
+                    try:
+                        product_row = product_df[product_df["product_id"].astype(str) == product_id]
+                        if not product_row.empty:
+                            row = product_row.iloc[0]
+                            image["title"] = str(row.get("product_name", image.get("title", filename)))
+                            image["description"] = f"브랜드: {row.get('brand', '')} | 가격: {row.get('price', 0):,}원 | 평점: {row.get('rating_avg', 0):.1f}"
+                            tags = [
+                                str(row.get("brand", "")),
+                                str(row.get("category_l1", "")),
+                                str(row.get("gender", ""))
+                            ]
+                            image["tags"] = [tag for tag in tags if tag and tag != "nan"]
+                    except Exception as e:
+                        print(f"상품 정보 처리 실패 {product_id}: {e}")
+        else:
+            # 쿼리가 없는 경우 기본 목록
+            image_files = image_files[:limit]
+            images = []
+            for idx, filename in enumerate(image_files):
+                images.append({
+                    "id": str(idx + 1),
+                    "filename": filename,
+                    "url": f"/api/images/file/{filename}",
+                    "title": filename,
+                    "description": "",
+                    "tags": [],
+                    "relevance": 1.0,  # 기본 관련도 (쿼리 없음)
+                })
 
         return _format_response(images, original_q, query_used)
 
@@ -166,37 +195,55 @@ async def search_images_by_file(file: UploadFile = File(...), limit: int = 9):
         if file.size and file.size > 10 * 1024 * 1024:
             raise HTTPException(status_code=400, detail="파일 크기는 10MB를 초과할 수 없습니다.")
 
-        # 임시 파일로 저장
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp_file:
-            # 파일 내용을 임시 파일에 복사
-            shutil.copyfileobj(file.file, tmp_file)
-            tmp_file_path = tmp_file.name
+        print(f"[ImageSearch] Uploaded file: {file.filename} | Size: {file.size} bytes")
 
-        try:
-            print(f"[ImageSearch] Uploaded file: {file.filename} | Size: {file.size} bytes")
-
-            # TODO: 실제 이미지 유사도 검색 구현
-            # 현재는 모크 데이터로 응답
-            # 향후 CLIP 모델이나 다른 이미지 유사도 검색 모델 연동 필요
-
-            # 임시로 일반 검색 결과 반환 (유사 이미지 검색 구현 전까지)
-            fallback_result = await list_images(query=None, limit=limit)
-
-            # 응답 형태 조정
-            return {
-                "queryOriginal": f"이미지 파일: {file.filename}",
-                "queryUsed": "image_search",
-                "images": fallback_result["images"],
-                "totalCount": fallback_result["totalCount"],
-                "searchTime": 0.1
-            }
-
-        finally:
-            # 임시 파일 정리
-            try:
-                os.unlink(tmp_file_path)
-            except:
-                pass
+        # 이미지 파일을 PIL Image로 변환
+        from PIL import Image
+        
+        # 파일 포인터를 처음으로 이동
+        await file.seek(0)
+        image_data = await file.read()
+        
+        # 이미지 데이터 검증
+        if not image_data:
+            raise HTTPException(status_code=400, detail="이미지 파일이 비어있습니다.")
+        
+        image = Image.open(io.BytesIO(image_data))
+        
+        # 이미지 형식 검증
+        if image.format not in ['JPEG', 'PNG', 'WEBP']:
+            raise HTTPException(status_code=400, detail="지원하지 않는 이미지 형식입니다. JPEG, PNG, WEBP만 지원됩니다.")
+        
+        # 실제 이미지 검색 수행 (텍스트 검색과 동일한 구조로 통일)
+        service = EnhancedImageSearchService()
+        search_results = service.search_by_image(image, limit)
+        
+        # 텍스트 검색과 동일한 응답 구조로 변환
+        formatted_images = []
+        for result in search_results:
+            formatted_images.append({
+                "id": str(result.get("id", "")),
+                "filename": str(result.get("title", "")),  # title을 filename으로 사용
+                "url": str(result.get("url", "")),
+                "title": str(result.get("title", "")),
+                "description": f"AI 이미지 검색 결과",
+                "tags": ["AI검색", "이미지매칭"],
+                "relevance": float(result.get("similarity", 0.0)),
+                # 텍스트 검색과 동일한 구조
+                "similarity": float(result.get("similarity", 0.0)),
+                "product_name": str(result.get("product_name", "")),
+                "price": int(result.get("price", 0)),
+                "rating_avg": float(result.get("rating_avg", 0.0)),
+                "brand": str(result.get("brand", "")),
+                "detailed_analysis": service._convert_analysis_to_json_safe(result.get("detailed_analysis", {}))
+            })
+        
+        return {
+            "query": f"이미지: {file.filename}",
+            "totalCount": len(formatted_images),
+            "searchTime": 0.0,
+            "images": formatted_images
+        }
 
     except HTTPException:
         raise

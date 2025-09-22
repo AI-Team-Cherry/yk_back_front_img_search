@@ -471,31 +471,31 @@ const ImageSearchPage: React.FC = () => {
                   
                   <ImageList sx={{ width: '100%', height: 'auto' }} cols={3} gap={16}>
                     {result.images.map((image) => (
-                        <ImageListItem 
-                          key={image.id}
-                          sx={{ 
-                            cursor: 'pointer',
-                            transition: 'transform 0.2s',
-                            '&:hover': {
+                      <ImageListItem 
+                        key={image.id}
+                        sx={{ 
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s',
+                          '&:hover': {
                               transform: 'scale(1.02)',
                               boxShadow: 2,
-                            },
+                          },
                             height: 'auto',
                             minHeight: '380px'
-                          }}
-                          onClick={() => handleImageClick(image)}
-                        >
+                        }}
+                        onClick={() => handleImageClick(image)}
+                      >
                         <Box sx={{ position: 'relative' }}>
-                          <img
-                            src={image.url}
-                            alt={image.title}
-                            loading="lazy"
-                            style={{
-                              width: '100%',
+                        <img
+                          src={image.url}
+                          alt={image.title}
+                          loading="lazy"
+                          style={{
+                            width: '100%',
                               height: '220px',
-                              objectFit: 'cover'
-                            }}
-                            onError={(e) => {
+                            objectFit: 'cover'
+                          }}
+                          onError={(e) => {
                               (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x250?text=Image+Not+Found';
                             }}
                           />

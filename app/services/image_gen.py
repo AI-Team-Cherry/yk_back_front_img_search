@@ -4,6 +4,8 @@ import pandas as pd
 import faiss
 import torch
 import time
+import io
+from PIL import Image
 from transformers import CLIPProcessor, CLIPModel
 from typing import Dict, List, Any, Optional
 
@@ -48,7 +50,7 @@ class EnhancedImageSearchService:
                 # CSV 파일 존재 확인
                 if not os.path.exists(caption_csv):
                     caption_csv = "app/img_search/caption(fashion-clip)_embedding.csv"
-                
+
                 caption_df = pd.read_csv(caption_csv)
                 image_df = pd.read_csv(image_csv)
                 
@@ -64,7 +66,7 @@ class EnhancedImageSearchService:
                     }
                 except FileNotFoundError:
                     available_files = set()
-                
+
                 # 실제 존재하는 파일만 유지
                 self.merged = self.merged[self.merged["image_file"].str.lower().isin(available_files)].reset_index(drop=True)
                 print(f"실제 파일 존재 필터링 후: {self.merged.shape}")
@@ -209,7 +211,7 @@ class EnhancedImageSearchService:
                     "title": caption,
                     "description": f"AI 생성 캡션: {caption}",
                     "tags": ["AI추천", "패션"],
-                    "relevance": max(0.95 - (len(unique_results) * 0.05), 0.1)
+                    "relevance": similarity_score  # 실제 유사도 점수 사용
                 }
                 
                 # 메타데이터 추가
@@ -228,7 +230,8 @@ class EnhancedImageSearchService:
         enhanced_results = []
         for result in unique_results:
             enhanced_result = result.copy()
-            enhanced_result["detailed_analysis"] = await self._analyze_single_product(result)
+            detailed_analysis = await self._analyze_single_product(result)
+            enhanced_result["detailed_analysis"] = detailed_analysis
             enhanced_results.append(enhanced_result)
         
         return enhanced_results
@@ -269,7 +272,7 @@ class EnhancedImageSearchService:
                 popularity_score, price_analysis, quality_indicators, trend_status
             )
             
-            return {
+            return self._convert_analysis_to_json_safe({
                 "popularity": {
                     "score": popularity_score,
                     "hearts": hearts,
@@ -285,7 +288,7 @@ class EnhancedImageSearchService:
                 "overall_rating": self._calculate_product_overall_rating(
                     popularity_score, price_analysis, quality_indicators, trend_status
                 )
-            }
+            })
             
         except Exception as e:
             print(f"상품 분석 오류: {e}")
@@ -514,6 +517,221 @@ class EnhancedImageSearchService:
             "grade": grade
         }
 
+    def _analyze_product(self, product_info: Dict[str, Any], similarity_score: float) -> Dict[str, Any]:
+        """상품 종합 분석 (기존 로직 재사용)"""
+        # 기본값 설정
+        price = product_info.get("price", 0)
+        rating_avg = product_info.get("rating_avg", 0.0)
+        reviews_count = product_info.get("reviews_count", 0)
+        hearts = product_info.get("hearts", 0)
+        views_1m = product_info.get("views_1m", 0)
+        sales_cum = product_info.get("sales_cum", 0)
+        brand = product_info.get("brand", "")
+        
+        # 각 분석 수행
+        popularity_analysis = self._calculate_popularity_score(hearts, views_1m, reviews_count)
+        price_analysis = self._analyze_price_segment(price)
+        quality_analysis = self._analyze_product_quality(rating_avg, reviews_count, price)
+        trend_analysis = self._analyze_product_trend(hearts, views_1m, rating_avg)
+        brand_analysis = self._analyze_brand_positioning(brand, price)
+        competitiveness = self._calculate_competitiveness_score(
+            popularity_analysis["score"], price_analysis["value_score"], 
+            quality_analysis["rating_score"], trend_analysis["score"]
+        )
+        
+        return {
+            "similarity": similarity_score,
+            "detailed_analysis": {
+                "popularity": popularity_analysis,
+                "price_analysis": price_analysis,
+                "quality_indicators": quality_analysis,
+                "trend_analysis": trend_analysis,
+                "brand_analysis": brand_analysis,
+                "competitiveness": competitiveness
+            }
+        }
+
+    def search_by_image(self, image: Image.Image, top_k: int = 9) -> List[Dict[str, Any]]:
+        """이미지로 검색 (기존 인프라 재사용)"""
+        start_time = time.time()
+        
+        print(f"이미지 검색 시작: {image.size}")
+        
+        # 이미지 전처리
+        processed_image = self._preprocess_image(image)
+        
+        # CLIP 모델로 이미지 임베딩 생성
+        image_embedding = self._get_image_embedding(processed_image)
+        
+        # FAISS 검색 (더 많은 결과를 가져와서 필터링)
+        search_k = min(top_k * 5, self.index.ntotal)
+        D, I = self.index.search(image_embedding, k=search_k)
+        
+        print(f"FAISS 검색 완료: {len(I[0])}개 후보")
+        
+        # 중복 제거 및 결과 생성
+        unique_results = []
+        seen = set()
+        
+        for i, idx in enumerate(I[0]):
+            if hasattr(self, 'metadata'):
+                # 처리된 데이터 사용
+                img_file = self.metadata['image_files'][idx]
+                caption = self.metadata['captions'][idx]
+            else:
+                # 원본 CSV 데이터 사용
+                img_file = self.merged.iloc[idx]["image_file"]
+                caption = self.merged.iloc[idx].get("predicted_caption", self.merged.iloc[idx].get("caption", ""))
+            
+            if img_file not in seen:
+                seen.add(img_file)
+                
+                # 유사도 점수
+                similarity_score = D[0][i]
+                
+                # 상품 메타데이터 가져오기
+                product_id = img_file.split("_")[0]
+                product_info = {}
+                
+                try:
+                    # product.csv에서 메타데이터 가져오기
+                    if hasattr(self, 'product_df') and self.product_df is not None:
+                        product_row = self.product_df[self.product_df["product_id"].astype(str) == product_id]
+                        if not product_row.empty:
+                            row = product_row.iloc[0]
+                            product_info = {
+                                "product_name": str(row.get("product_name", "")),
+                                "price": int(row.get("price", 0)) if pd.notna(row.get("price", 0)) else 0,
+                                "rating_avg": float(row.get("rating_avg", 0)) if pd.notna(row.get("rating_avg", 0)) else 0.0,
+                                "reviews_count": int(row.get("reviews_count", 0)) if pd.notna(row.get("reviews_count", 0)) else 0,
+                                "hearts": int(row.get("hearts", 0)) if pd.notna(row.get("hearts", 0)) else 0,
+                                "views_1m": int(row.get("views_1m", 0)) if pd.notna(row.get("views_1m", 0)) else 0,
+                                "sales_cum": int(row.get("sales_cum", 0)) if pd.notna(row.get("sales_cum", 0)) else 0,
+                                "brand": str(row.get("brand", "")),
+                                "category_l1": str(row.get("category_l1", "")),
+                                "gender": str(row.get("gender", ""))
+                            }
+                except Exception as e:
+                    print(f"메타데이터 로드 실패 {product_id}: {e}")
+                    product_info = {}
+                
+                # 결과 생성 (모든 numpy 타입을 Python 기본 타입으로 변환)
+                result = {
+                    "id": f"{product_id}_{i}",  # 고유 ID 생성 (product_id + 인덱스)
+                    "title": str(product_info.get("product_name", caption[:50] if caption else "상품명 없음")),
+                    "url": f"/api/images/file/{img_file}",
+                    "similarity": float(similarity_score),  # numpy.float32를 float로 변환
+                    "product_name": str(product_info.get("product_name", "")),
+                    "price": int(product_info.get("price", 0)),
+                    "rating_avg": float(product_info.get("rating_avg", 0.0)),
+                    "brand": str(product_info.get("brand", "")),
+                    "detailed_analysis": self._convert_analysis_to_json_safe(self._format_analysis_for_frontend(
+                        product_info, similarity_score
+                    ))
+                }
+                
+                unique_results.append(result)
+                
+                if len(unique_results) >= top_k:
+                    break
+        
+        search_time = time.time() - start_time
+        print(f"이미지 검색 완료: {len(unique_results)}개 결과, {search_time:.2f}초")
+        
+        return unique_results
+
+    def _preprocess_image(self, image: Image.Image) -> Image.Image:
+        """이미지 전처리"""
+        # RGB 변환
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+        
+        return image
+
+    def _get_image_embedding(self, image: Image.Image) -> np.ndarray:
+        """CLIP 모델로 이미지 임베딩 생성"""
+        inputs = self.clip_processor(images=image, return_tensors="pt")
+        
+        with torch.no_grad():
+            image_features = self.clip_model.get_image_features(**inputs)
+            embedding = image_features.cpu().numpy().astype(np.float32)
+        
+        # L2 정규화
+        embedding = embedding / np.linalg.norm(embedding)
+        return embedding
+    
+    def _convert_analysis_to_json_safe(self, data: Any) -> Any:
+        """numpy 타입을 JSON 직렬화 가능한 타입으로 변환"""
+        if isinstance(data, dict):
+            return {key: self._convert_analysis_to_json_safe(value) for key, value in data.items()}
+        elif isinstance(data, list):
+            return [self._convert_analysis_to_json_safe(item) for item in data]
+        elif isinstance(data, np.integer):
+            return int(data)
+        elif isinstance(data, np.floating):
+            return float(data)
+        elif isinstance(data, np.ndarray):
+            return data.tolist()
+        else:
+            return data
+    
+    def _format_analysis_for_frontend(self, product_info: Dict[str, Any], similarity_score: float) -> Dict[str, Any]:
+        """프론트엔드가 기대하는 구조로 분석 결과 변환"""
+        # 기존 분석 함수들 호출 (기존 로직 그대로)
+        popularity_raw = self._calculate_popularity_score(
+            product_info.get("hearts", 0),
+            product_info.get("views_1m", 0),
+            product_info.get("reviews_count", 0)
+        )
+        price_raw = self._analyze_price_segment(product_info.get("price", 0))
+        quality_raw = self._analyze_product_quality(
+            product_info.get("rating_avg", 0.0),
+            product_info.get("reviews_count", 0),
+            product_info.get("price", 0)
+        )
+        trend_raw = self._analyze_product_trend(
+            product_info.get("hearts", 0),
+            product_info.get("views_1m", 0),
+            product_info.get("rating_avg", 0.0)
+        )
+        brand_raw = self._analyze_brand_positioning(
+            product_info.get("brand", ""),
+            product_info.get("price", 0)
+        )
+        competitiveness_raw = self._analyze_competitiveness(
+            similarity_score,
+            product_info.get("price", 0),
+            product_info.get("rating_avg", 0.0)
+        )
+        overall_raw = self._calculate_product_overall_rating(
+            popularity_raw, price_raw, quality_raw, trend_raw
+        )
+        
+        # 추천 이유 생성
+        recommendation_reasons = self._generate_recommendation_reasons(
+            popularity_raw, price_raw, quality_raw, trend_raw
+        )
+        
+        # 프론트엔드가 기대하는 구조로 변환
+        return {
+            "popularity": {
+                "score": {
+                    "score": popularity_raw["score"],
+                    "level": popularity_raw["level"]
+                },
+                "hearts": product_info.get("hearts", 0),
+                "views_1m": product_info.get("views_1m", 0),
+                "reviews_count": product_info.get("reviews_count", 0)
+            },
+            "price_analysis": price_raw,
+            "quality_indicators": quality_raw,
+            "trend_status": trend_raw,
+            "brand_analysis": brand_raw,
+            "competitiveness": competitiveness_raw,
+            "recommendation_reasons": recommendation_reasons,
+            "overall_rating": overall_raw
+        }
+
 # 전역 서비스 인스턴스
 _search_service = None
 
@@ -527,32 +745,36 @@ def get_search_service():
 # 기존 함수와의 호환성을 위한 래퍼
 async def generate_image(prompt: str, top: int):
     """기존 generate_image 함수와 호환되는 래퍼"""
+    start_time = time.time()
+    
     service = get_search_service()
     results = await service.search_existing_images(prompt, top)
     
-    # 기존 API 응답 형태로 변환 (호환성 유지)
+    search_time = time.time() - start_time
+    
+    # 기존 API 응답 형태로 변환 (호환성 유지) - 모든 numpy 타입 변환
     formatted_images = []
     for result in results:
         formatted_images.append({
-            "id": result.get("id", ""),
-            "filename": result.get("filename", ""),
-            "url": result.get("url", ""),
-            "title": result.get("title", ""),
-            "description": result.get("description", ""),
+            "id": str(result.get("id", "")),
+            "filename": str(result.get("filename", "")),
+            "url": str(result.get("url", "")),
+            "title": str(result.get("title", "")),
+            "description": str(result.get("description", "")),
             "tags": result.get("tags", []),
-            "relevance": result.get("relevance", 0.0),
-            # 새로운 분석 정보 추가 (프론트엔드에서 활용 가능)
-            "similarity": result.get("similarity", 0.0),
-            "product_name": result.get("product_name", ""),
-            "price": result.get("price", 0),
-            "rating_avg": result.get("rating_avg", 0.0),
-            "brand": result.get("brand", ""),
-            "detailed_analysis": result.get("detailed_analysis", {})
+            "relevance": float(result.get("relevance", 0.0)),
+            # 새로운 분석 정보 추가 (프론트엔드에서 활용 가능) - 모든 numpy 타입 변환
+            "similarity": float(result.get("similarity", 0.0)),
+            "product_name": str(result.get("product_name", "")),
+            "price": int(result.get("price", 0)),
+            "rating_avg": float(result.get("rating_avg", 0.0)),
+            "brand": str(result.get("brand", "")),
+            "detailed_analysis": service._convert_analysis_to_json_safe(result.get("detailed_analysis", {}))
         })
 
     return {
         "query": prompt,
         "totalCount": len(formatted_images),
-        "searchTime": 1.5,
+        "searchTime": round(search_time, 2),
         "images": formatted_images
     }

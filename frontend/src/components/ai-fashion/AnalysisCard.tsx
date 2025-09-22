@@ -370,7 +370,7 @@ const AnalysisCard: React.FC<AnalysisCardProps> = ({ analysis, productName, bran
                 추천 이유
               </Typography>
               <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                {analysis.recommendation_reasons.map((reason, index) => (
+                {analysis.recommendation_reasons?.map((reason, index) => (
                   <Chip 
                     key={index} 
                     label={reason} 
