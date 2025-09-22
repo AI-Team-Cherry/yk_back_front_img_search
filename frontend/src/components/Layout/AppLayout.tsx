@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import {
   AppBar,
@@ -18,6 +18,7 @@ import {
   MenuItem,
   Divider,
   Chip,
+  Button,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -34,6 +35,7 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
 import { Forum } from "@mui/icons-material";
+import ChatbotPopup from "../ChatbotPopup";
 
 const drawerWidth = 240;
 
@@ -45,22 +47,34 @@ interface MenuItemType {
 
 const menuItems: MenuItemType[] = [
   { text: "대시보드", icon: <Dashboard />, path: "/dashboard" },
-  { text: "AI 스마트 분석", icon: <Psychology />, path: "/analysis" },
+  { text: "데이터 분석", icon: <Psychology />, path: "/analysis" },
+  { text: "공유 분석", icon: <Share />, path: "/shared" },
   { text: "이미지 검색", icon: <ImageSearch />, path: "/image-search" },
   { text: "AI 패션 모델링", icon: <AutoAwesome />, path: "/fashion-modeling" },
-  { text: "부서별 게시판", icon: <Forum />, path: "/boards/MD" },
-  { text: "게시판 상담", icon: <Chat />, path: "/board-chat" },
-  { text: "공유 분석", icon: <Share />, path: "/shared" },
+  { text: "부서 워크 보드", icon: <Forum />, path: "/boards/MD" },
   { text: "마이페이지", icon: <Person />, path: "/mypage" },
 ];
 
 const AppLayout: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [chatbotOpen, setChatbotOpen] = useState(false);
 
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // 컴포넌트 마운트 시 사용자 정보 새로고침
+  useEffect(() => {
+    console.log('AppLayout - Current user:', user);
+    if (refreshUser) {
+      refreshUser().catch(console.error);
+    }
+  }, []);
+
+  useEffect(() => {
+    console.log('AppLayout - User updated:', user);
+  }, [user]);
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -110,7 +124,7 @@ const AppLayout: React.FC = () => {
         ))}
       </List>
 
-      {/* AI Bot 이미지 - 하단에 고정 */}
+      {/* AI 챗봇 버튼 - 하단에 고정 */}
       <Box
         sx={{
           position: "absolute",
@@ -121,17 +135,29 @@ const AppLayout: React.FC = () => {
           textAlign: "center",
         }}
       >
-        <Box
-          component="img"
-          src="https://blog.kakaocdn.net/dna/t7OMA/btsQCIgXJD0/AAAAAAAAAAAAAAAAAAAAACMe2Be8M0pIZ3_vHctqad-emUAEQWi8vQv8hHXx56hq/img.gif?credential=yqXZFxpELC7KVnFOS48ylbz2pIh7yKj8&expires=1759244399&allow_ip=&allow_referer=&signature=XTa14%2BX5%2FFYHko3qt%2B7BVncLl9I%3D"
-          alt="AI Bot"
+        <Button
+          variant="contained"
+          onClick={() => setChatbotOpen(true)}
           sx={{
-            width: 120,
-            height: 120,
-            borderRadius: 2,
-            filter: "drop-shadow(0 4px 16px rgba(76, 175, 80, 0.4))",
+            bgcolor: '#4caf50',
+            color: 'white',
+            borderRadius: 3,
+            px: 3,
+            py: 1.5,
+            fontSize: '1rem',
+            fontWeight: 'bold',
+            boxShadow: '0 4px 16px rgba(76, 175, 80, 0.4)',
+            '&:hover': {
+              bgcolor: '#45a049',
+              transform: 'translateY(-2px)',
+              boxShadow: '0 6px 20px rgba(76, 175, 80, 0.5)',
+            },
+            transition: 'all 0.3s ease'
           }}
-        />
+          startIcon={<Chat />}
+        >
+          AI 상담
+        </Button>
       </Box>
     </div>
   );
@@ -220,10 +246,15 @@ const AppLayout: React.FC = () => {
         <MenuItem onClick={handleMenuClose}>
           <Avatar />
           <Box>
-            <Typography variant="subtitle2">{user?.name}</Typography>
+            <Typography variant="subtitle2">{user?.name || '이름 없음'}</Typography>
             <Typography variant="caption" color="text.secondary">
-              {user?.employeeId}
+              {user?.employeeId || '사번 없음'} • {user?.department || '부서 없음'}
             </Typography>
+            {user?.email && (
+              <Typography variant="caption" color="text.secondary" display="block">
+                {user.email}
+              </Typography>
+            )}
           </Box>
         </MenuItem>
         <Divider />
@@ -288,6 +319,9 @@ const AppLayout: React.FC = () => {
         <Toolbar />
         <Outlet />
       </Box>
+
+      {/* 챗봇 팝업 */}
+      <ChatbotPopup open={chatbotOpen} onClose={() => setChatbotOpen(false)} />
     </Box>
   );
 };

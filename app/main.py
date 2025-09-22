@@ -16,12 +16,7 @@ app = FastAPI(
 # CORS 설정 (개발 환경용)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",  # 프론트엔드가 3001 포트에서 실행 중
-        "http://127.0.0.1:3001"
-    ],
+    allow_origins=["*"],  # 개발 환경에서 모든 오리진 허용
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],

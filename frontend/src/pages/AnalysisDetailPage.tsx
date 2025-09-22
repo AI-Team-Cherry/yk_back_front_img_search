@@ -335,7 +335,7 @@ const AnalysisDetailPage: React.FC = () => {
         </Box>
       </Box>
 
-      {/* Analysis Content - SmartAnalysisPage 스타일과 동일하게 */}
+      {/* Analysis Content - DataAnalyticsDashboard 스타일과 동일하게 */}
       <Box>
         <Alert 
           severity="success" 

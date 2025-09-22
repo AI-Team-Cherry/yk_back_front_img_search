@@ -68,21 +68,32 @@ export const login = async (credentials: LoginRequest): Promise<LoginResponse> =
     
     // 토큰 저장
     localStorage.setItem('token', data.access_token);
-    localStorage.setItem('userId', credentials.employeeId); // 사용자 ID도 저장
-    
-    // 사용자 정보 구성 (현재 백엔드에서 user 정보를 반환하지 않으므로 기본값 사용)
+
+    // 로그인 성공 후 실제 사용자 정보 가져오기
+    const userResponse = await api.get('/auth/me');
+    const userData = userResponse.data;
+
     const user = {
-      id: credentials.employeeId,
-      employeeId: credentials.employeeId,
-      name: credentials.employeeId, // 실제로는 별도 API에서 가져와야 함
-      department: 'Unknown',
-      role: 'user',
-      createdAt: new Date(),
-      updatedAt: new Date()
+      id: userData.id || userData.employeeId,
+      employeeId: userData.employeeId || credentials.employeeId,
+      name: userData.name || 'Unknown',
+      email: userData.email,
+      phone: userData.phone,
+      department: userData.department || 'Unknown',
+      role: userData.role || 'user',
+      bio: userData.bio,
+      profilePicture: userData.profilePicture,
+      jobTitle: userData.jobTitle,
+      company: userData.company,
+      workLocation: userData.workLocation,
+      lastLogin: userData.lastLogin ? new Date(userData.lastLogin) : undefined,
+      createdAt: userData.createdAt ? new Date(userData.createdAt) : new Date(),
+      updatedAt: userData.updatedAt ? new Date(userData.updatedAt) : new Date()
     };
-    
+
     localStorage.setItem('user', JSON.stringify(user));
-    
+    localStorage.setItem('userId', user.id || user.employeeId);
+
     return {
       token: data.access_token,
       refreshToken: '',

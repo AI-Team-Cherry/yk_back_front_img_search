@@ -15,6 +15,7 @@ products_collection = db["products"]
 images_collection   = db["images"]
 results_collection  = db["results"]
 buyers_collection = db["buyers"]
+boards_collection = db["boards"]
 
 async def insert_result(doc: dict):
     doc.setdefault("createdAt", datetime.utcnow())
@@ -71,9 +72,9 @@ def init_indexes():
         db.boards.create_index([("department", ASCENDING)])
         db.boards.create_index([("created_at", DESCENDING)])
         db.board_vectors.create_index([("department", ASCENDING)])
-        print("✅ MongoDB indexes created")
+        print("MongoDB indexes created successfully")
     except Exception as e:
-        print("❌ Index creation error:", e)
+        print("Index creation error:", e)
 
 init_indexes()
 

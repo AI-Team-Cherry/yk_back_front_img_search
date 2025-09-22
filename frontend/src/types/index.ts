@@ -142,6 +142,7 @@ export interface ApiResponse<T> {
 
 export interface QueryRequest {
   query: string;
+  collections?: string[];
   use_ai_mode?: boolean;
   tags?: string[];
 }

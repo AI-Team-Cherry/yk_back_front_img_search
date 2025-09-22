@@ -1,5 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
   Box,
   Typography,
   TextField,
@@ -14,7 +17,6 @@ import {
   IconButton,
   Fade,
   Grow,
-  Divider,
 } from "@mui/material";
 import {
   Send as SendIcon,
@@ -25,12 +27,9 @@ import {
   Code as CodeIcon,
   AutoAwesome as AIIcon,
   Science as ColabIcon,
-  Link as LinkIcon,
-  Add as AddIcon,
+  Close as CloseIcon,
 } from "@mui/icons-material";
-import ChatMessageBubble from "../components/ChatMessageBubble";
 import { sendBoardChat } from "../services/boardChat";
-import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 
 interface Message {
@@ -39,7 +38,12 @@ interface Message {
   postLink?: string;
   timestamp?: Date;
   isTyping?: boolean;
-  colabConnection?: boolean; // 코랩 연결 상태
+  colabConnection?: boolean;
+}
+
+interface ChatbotPopupProps {
+  open: boolean;
+  onClose: () => void;
 }
 
 const departments = [
@@ -48,7 +52,7 @@ const departments = [
   { code: "SW", name: "소프트웨어", icon: <CodeIcon />, color: "#FF9800" },
 ];
 
-const BoardChatPage: React.FC = () => {
+const ChatbotPopup: React.FC<ChatbotPopupProps> = ({ open, onClose }) => {
   const [department, setDepartment] = useState("MD");
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState<Message[]>([
@@ -62,7 +66,6 @@ const BoardChatPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [isConnectedToColab, setIsConnectedToColab] = useState(true);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
   const { user } = useAuth();
 
   const currentDept = departments.find(d => d.code === department) || departments[0];
@@ -169,14 +172,14 @@ const BoardChatPage: React.FC = () => {
                 animation: isTyping ? 'pulse 1.5s infinite' : 'none'
               }}
             >
-              {isTyping ? <CircularProgress size={20} /> : <BotIcon />}
+              {isTyping ? <CircularProgress size={16} /> : <BotIcon />}
             </Avatar>
           )}
 
           <Paper
             elevation={0}
             sx={{
-              maxWidth: '70%',
+              maxWidth: '75%',
               p: 1.5,
               bgcolor: isUser ? currentDept.color : 'rgba(255, 255, 255, 0.05)',
               color: isUser ? 'white' : '#ffffff',
@@ -191,14 +194,14 @@ const BoardChatPage: React.FC = () => {
                   AI가 답변을 생성중입니다
                 </Typography>
                 <Box display="flex" gap={0.5}>
-                  <Box sx={{ width: 6, height: 6, bgcolor: 'rgba(255, 255, 255, 0.4)', borderRadius: '50%', animation: 'bounce 1.4s infinite 0s' }} />
-                  <Box sx={{ width: 6, height: 6, bgcolor: 'rgba(255, 255, 255, 0.4)', borderRadius: '50%', animation: 'bounce 1.4s infinite 0.2s' }} />
-                  <Box sx={{ width: 6, height: 6, bgcolor: 'rgba(255, 255, 255, 0.4)', borderRadius: '50%', animation: 'bounce 1.4s infinite 0.4s' }} />
+                  <Box sx={{ width: 4, height: 4, bgcolor: 'rgba(255, 255, 255, 0.4)', borderRadius: '50%', animation: 'bounce 1.4s infinite 0s' }} />
+                  <Box sx={{ width: 4, height: 4, bgcolor: 'rgba(255, 255, 255, 0.4)', borderRadius: '50%', animation: 'bounce 1.4s infinite 0.2s' }} />
+                  <Box sx={{ width: 4, height: 4, bgcolor: 'rgba(255, 255, 255, 0.4)', borderRadius: '50%', animation: 'bounce 1.4s infinite 0.4s' }} />
                 </Box>
               </Box>
             ) : (
               <>
-                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
+                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>
                   {message.text}
                 </Typography>
 
@@ -212,8 +215,9 @@ const BoardChatPage: React.FC = () => {
                       mt: 1,
                       bgcolor: 'rgba(255, 255, 255, 0.1)',
                       color: 'rgba(255, 255, 255, 0.7)',
-                      fontSize: '0.75rem',
-                      border: 'none'
+                      fontSize: '0.7rem',
+                      border: 'none',
+                      height: 20
                     }}
                   />
                 )}
@@ -224,9 +228,9 @@ const BoardChatPage: React.FC = () => {
                     variant="caption"
                     sx={{
                       display: 'block',
-                      mt: 1,
+                      mt: 0.5,
                       opacity: 0.7,
-                      fontSize: '0.75rem'
+                      fontSize: '0.7rem'
                     }}
                   >
                     {message.timestamp.toLocaleTimeString('ko-KR', {
@@ -257,17 +261,22 @@ const BoardChatPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'transparent' }}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="sm"
+      fullWidth
+      PaperProps={{
+        sx: {
+          height: '80vh',
+          bgcolor: 'rgba(18, 18, 18, 0.95)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+        }
+      }}
+    >
       {/* 헤더 */}
-      <Paper
-        elevation={0}
-        sx={{
-          p: 2,
-          bgcolor: 'transparent',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
-          borderRadius: 0
-        }}
-      >
+      <DialogTitle sx={{ p: 2, bgcolor: 'transparent', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
         <Stack direction="row" alignItems="center" spacing={2}>
           <Avatar
             sx={{
@@ -304,10 +313,15 @@ const BoardChatPage: React.FC = () => {
             onChange={(e) => setDepartment(e.target.value)}
             size="small"
             sx={{
-              minWidth: 150,
+              minWidth: 120,
+              color: 'white',
               '& .MuiOutlinedInput-root': {
-                borderRadius: 2
-              }
+                borderRadius: 2,
+                '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.2)' },
+                '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
+                '&.Mui-focused fieldset': { borderColor: currentDept.color },
+              },
+              '& .MuiSvgIcon-root': { color: 'white' }
             }}
           >
             {departments.map((dept) => (
@@ -319,165 +333,111 @@ const BoardChatPage: React.FC = () => {
               </MenuItem>
             ))}
           </Select>
-        </Stack>
-      </Paper>
 
-      {/* 채팅 영역 */}
-      <Box
-        sx={{
-          flex: 1,
-          overflow: 'auto',
-          pt: 3,
-          px: 2,
-          pb: 10,
-          background: 'transparent'
-        }}
-      >
-        {messages.map((message, index) => (
-          <CustomMessage key={index} message={message} index={index} />
-        ))}
-
-        {/* 액션 버튼들 */}
-        {messages.length > 1 && messages[messages.length - 1]?.sender === "bot" && !messages[messages.length - 1]?.isTyping && (
-          <Fade in={true}>
-            <Box display="flex" justifyContent="center" gap={2} mt={2}>
-              {messages[messages.length - 1]?.postLink && (
-                <Button
-                  variant="outlined"
-                  startIcon={<LinkIcon />}
-                  onClick={() => navigate(messages[messages.length - 1].postLink!)}
-                  sx={{
-                    borderColor: currentDept.color,
-                    color: currentDept.color,
-                    borderRadius: 3
-                  }}
-                >
-                  관련 게시글 보기
-                </Button>
-              )}
-
-              {messages[messages.length - 1]?.text.includes("새로운 질문을 게시판에") && (
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() =>
-                    navigate(`/boards/${department}/new`, {
-                      state: {
-                        prefillTitle: messages[messages.length - 2]?.text || "",
-                        prefillContent: "AI 챗봇에서 전달된 질문입니다. 추가 상세 내용을 작성해주세요.",
-                      },
-                    })
-                  }
-                  sx={{
-                    bgcolor: currentDept.color,
-                    '&:hover': { bgcolor: currentDept.color + 'DD' },
-                    borderRadius: 3
-                  }}
-                >
-                  게시글 작성하기
-                </Button>
-              )}
-            </Box>
-          </Fade>
-        )}
-
-        <div ref={chatEndRef} />
-      </Box>
-
-      {/* 입력창 */}
-      <Box
-        sx={{
-          position: 'fixed',
-          bottom: 0,
-          left: { xs: 0, sm: 240 },
-          right: 0,
-          display: 'flex',
-          justifyContent: 'center',
-          px: 2,
-          pb: 4,
-          pt: 1,
-          zIndex: 1000
-        }}
-      >
-        <Paper
-          elevation={3}
-          sx={{
-            maxWidth: '600px',
-            width: '100%',
-            p: 1,
-            borderRadius: 3,
-            bgcolor: 'rgba(255, 255, 255, 0.03)',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            backdropFilter: 'blur(20px)'
-          }}
-        >
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <TextField
-            fullWidth
-            multiline
-            maxRows={2}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder={`${currentDept.name} 관련 질문을 입력하세요...`}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault();
-                handleSend();
-              }
-            }}
-            disabled={loading}
-            sx={{
-              '& .MuiOutlinedInput-root': {
-                borderRadius: 2,
-                bgcolor: 'rgba(255, 255, 255, 0.05)',
-                color: '#ffffff',
-                '& fieldset': {
-                  borderColor: 'rgba(255, 255, 255, 0.15)'
-                },
-                '&:hover': {
-                  '& > fieldset': {
-                    borderColor: currentDept.color
-                  }
-                },
-                '&.Mui-focused': {
-                  '& > fieldset': {
-                    borderColor: currentDept.color
-                  }
-                }
-              },
-              '& .MuiInputBase-input::placeholder': {
-                color: 'rgba(255, 255, 255, 0.5)'
-              }
-            }}
-          />
-          <IconButton
-            onClick={handleSend}
-            disabled={loading || !input.trim()}
-            sx={{
-              bgcolor: currentDept.color,
-              color: 'white',
-              width: 40,
-              height: 40,
-              '&:hover': {
-                bgcolor: currentDept.color + 'DD'
-              },
-              '&:disabled': {
-                bgcolor: 'rgba(255, 255, 255, 0.1)',
-                color: 'rgba(255, 255, 255, 0.3)'
-              }
-            }}
-          >
-            {loading ? <CircularProgress size={16} color="inherit" /> : <SendIcon sx={{ fontSize: 18 }} />}
+          <IconButton onClick={onClose} sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+            <CloseIcon />
           </IconButton>
         </Stack>
-        </Paper>
-      </Box>
+      </DialogTitle>
+
+      {/* 채팅 영역 */}
+      <DialogContent sx={{ p: 1, display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <Box
+          sx={{
+            flex: 1,
+            overflow: 'auto',
+            px: 1,
+            py: 2,
+            background: 'transparent'
+          }}
+        >
+          {messages.map((message, index) => (
+            <CustomMessage key={index} message={message} index={index} />
+          ))}
+
+          <div ref={chatEndRef} />
+        </Box>
+
+        {/* 입력창 */}
+        <Box sx={{ pt: 1 }}>
+          <Paper
+            elevation={3}
+            sx={{
+              p: 1,
+              borderRadius: 3,
+              bgcolor: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid rgba(255, 255, 255, 0.08)',
+              backdropFilter: 'blur(20px)'
+            }}
+          >
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <TextField
+                fullWidth
+                multiline
+                maxRows={2}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={`${currentDept.name} 관련 질문을 입력하세요...`}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSend();
+                  }
+                }}
+                disabled={loading}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    bgcolor: 'rgba(255, 255, 255, 0.05)',
+                    color: '#ffffff',
+                    '& fieldset': {
+                      borderColor: 'rgba(255, 255, 255, 0.15)'
+                    },
+                    '&:hover': {
+                      '& > fieldset': {
+                        borderColor: currentDept.color
+                      }
+                    },
+                    '&.Mui-focused': {
+                      '& > fieldset': {
+                        borderColor: currentDept.color
+                      }
+                    }
+                  },
+                  '& .MuiInputBase-input::placeholder': {
+                    color: 'rgba(255, 255, 255, 0.5)'
+                  }
+                }}
+              />
+              <IconButton
+                onClick={handleSend}
+                disabled={loading || !input.trim()}
+                sx={{
+                  bgcolor: currentDept.color,
+                  color: 'white',
+                  width: 40,
+                  height: 40,
+                  '&:hover': {
+                    bgcolor: currentDept.color + 'DD'
+                  },
+                  '&:disabled': {
+                    bgcolor: 'rgba(255, 255, 255, 0.1)',
+                    color: 'rgba(255, 255, 255, 0.3)'
+                  }
+                }}
+              >
+                {loading ? <CircularProgress size={16} color="inherit" /> : <SendIcon sx={{ fontSize: 18 }} />}
+              </IconButton>
+            </Stack>
+          </Paper>
+        </Box>
+      </DialogContent>
 
       {/* CSS 애니메이션 */}
       <style>{`
         @keyframes bounce {
           0%, 60%, 100% { transform: translateY(0); }
-          30% { transform: translateY(-10px); }
+          30% { transform: translateY(-6px); }
         }
 
         @keyframes pulse {
@@ -486,8 +446,8 @@ const BoardChatPage: React.FC = () => {
           100% { transform: scale(1); }
         }
       `}</style>
-    </Box>
+    </Dialog>
   );
 };
 
-export default BoardChatPage;
+export default ChatbotPopup;
