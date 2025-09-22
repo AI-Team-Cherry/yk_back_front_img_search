@@ -26,6 +26,13 @@ export interface ImageResult {
   description?: string;
   tags?: string[];
   relevance?: number;
+  // 새로운 AI 분석 속성들
+  similarity?: number;
+  product_name?: string;
+  price?: number;
+  rating_avg?: number;
+  brand?: string;
+  detailed_analysis?: any;
 }
 
 export interface SearchResult {
