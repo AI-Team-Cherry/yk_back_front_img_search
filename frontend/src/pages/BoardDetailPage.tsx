@@ -128,7 +128,7 @@ const BoardDetailPage: React.FC = () => {
 
   if (loading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="400px">
+      <Box display="flex" justifyContent="center" alignItems="center" height="400px" bgcolor="#121212">
         <CircularProgress size={48} sx={{ color: currentDeptInfo.color }} />
       </Box>
     );
@@ -136,8 +136,8 @@ const BoardDetailPage: React.FC = () => {
 
   if (!post) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity="error" sx={{ borderRadius: 2 }}>
+      <Box sx={{ p: 3, bgcolor: '#121212', minHeight: '100vh' }}>
+        <Alert severity="error" sx={{ borderRadius: 2, bgcolor: '#1e1e1e', color: '#ffffff' }}>
           게시글을 찾을 수 없습니다.
         </Alert>
       </Box>
@@ -145,7 +145,7 @@ const BoardDetailPage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto' }}>
+    <Box sx={{ p: 3, maxWidth: 1200, mx: 'auto', bgcolor: '#121212', minHeight: '100vh' }}>
       {/* 뒤로가기 버튼 */}
       <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 3 }}>
         <IconButton
@@ -165,12 +165,13 @@ const BoardDetailPage: React.FC = () => {
 
       {/* 메인 게시글 */}
       <Paper
-        elevation={0}
+        elevation={2}
         sx={{
           mb: 4,
-          border: `2px solid ${currentDeptInfo.color}30`,
+          border: `1px solid ${currentDeptInfo.color}50`,
           borderRadius: 3,
-          overflow: 'hidden'
+          overflow: 'hidden',
+          bgcolor: '#1e1e1e'
         }}
       >
         {/* 헤더 */}
@@ -178,7 +179,8 @@ const BoardDetailPage: React.FC = () => {
           sx={{
             p: 3,
             background: `linear-gradient(135deg, ${currentDeptInfo.color}20 0%, ${currentDeptInfo.color}10 100%)`,
-            borderBottom: `1px solid ${currentDeptInfo.color}30`
+            borderBottom: `1px solid ${currentDeptInfo.color}40`,
+            bgcolor: '#2a2a2a'
           }}
         >
           <Stack direction="row" alignItems="center" spacing={3} sx={{ mb: 2 }}>
@@ -193,19 +195,19 @@ const BoardDetailPage: React.FC = () => {
               <PersonIcon sx={{ fontSize: 28 }} />
             </Avatar>
             <Box sx={{ flex: 1 }}>
-              <Typography variant="h5" fontWeight="bold" gutterBottom>
+              <Typography variant="h5" fontWeight="bold" gutterBottom sx={{ color: '#ffffff' }}>
                 {post.title}
               </Typography>
               <Stack direction="row" alignItems="center" spacing={2}>
-                <Typography variant="subtitle1" fontWeight="600">
+                <Typography variant="subtitle1" fontWeight="600" sx={{ color: '#ffffff' }}>
                   {post.authorName}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{ color: '#bbbbbb' }}>
                   ({post.authorId})
                 </Typography>
                 <Stack direction="row" alignItems="center" spacing={0.5}>
                   <TimeIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
-                  <Typography variant="body2" color="text.secondary">
+                  <Typography variant="body2" sx={{ color: '#bbbbbb' }}>
                     {new Date(post.created_at).toLocaleString('ko-KR')}
                   </Typography>
                 </Stack>
@@ -239,13 +241,14 @@ const BoardDetailPage: React.FC = () => {
         </Box>
 
         {/* 내용 */}
-        <Box sx={{ p: 4 }}>
+        <Box sx={{ p: 4, bgcolor: '#1e1e1e' }}>
           <Typography
             variant="body1"
             sx={{
               lineHeight: 1.8,
               fontSize: '1.1rem',
-              whiteSpace: 'pre-wrap'
+              whiteSpace: 'pre-wrap',
+              color: '#e0e0e0'
             }}
           >
             {post.content}
@@ -254,18 +257,18 @@ const BoardDetailPage: React.FC = () => {
       </Paper>
 
       {/* 답변 섹션 */}
-      <Paper elevation={0} sx={{ border: '1px solid #e0e0e0', borderRadius: 3 }}>
-        <Box sx={{ p: 3, borderBottom: '1px solid #e0e0e0' }}>
+      <Paper elevation={2} sx={{ border: '1px solid #333', borderRadius: 3, bgcolor: '#1e1e1e' }}>
+        <Box sx={{ p: 3, borderBottom: '1px solid #333', bgcolor: '#1e1e1e' }}>
           <Stack direction="row" alignItems="center" spacing={2}>
             <ReplyIcon sx={{ color: currentDeptInfo.color }} />
-            <Typography variant="h6" fontWeight="bold">
+            <Typography variant="h6" fontWeight="bold" sx={{ color: '#ffffff' }}>
               답변 ({post.replies?.length || 0})
             </Typography>
           </Stack>
         </Box>
 
         {/* 답변 목록 */}
-        <Box sx={{ p: 3 }}>
+        <Box sx={{ p: 3, bgcolor: '#1e1e1e' }}>
           {post.replies?.length ? (
             <Stack spacing={3}>
               {post.replies.map((r: any, idx: number) => (
@@ -273,9 +276,10 @@ const BoardDetailPage: React.FC = () => {
                   key={idx}
                   elevation={0}
                   sx={{
-                    border: '1px solid #f0f0f0',
+                    border: '1px solid #444',
                     borderRadius: 2,
-                    bgcolor: '#fafafa'
+                    bgcolor: '#2a2a2a',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.3)'
                   }}
                 >
                   <CardContent sx={{ p: 3 }}>
@@ -292,17 +296,17 @@ const BoardDetailPage: React.FC = () => {
                       </Avatar>
                       <Box sx={{ flex: 1 }}>
                         <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1 }}>
-                          <Typography variant="subtitle2" fontWeight="bold">
+                          <Typography variant="subtitle2" fontWeight="bold" sx={{ color: '#ffffff' }}>
                             {r.authorName}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography variant="caption" sx={{ color: '#bbbbbb' }}>
                             ({r.authorId})
                           </Typography>
-                          <Typography variant="caption" color="text.secondary">
+                          <Typography variant="caption" sx={{ color: '#bbbbbb' }}>
                             {new Date(r.created_at).toLocaleString('ko-KR')}
                           </Typography>
                         </Stack>
-                        <Typography variant="body2" sx={{ lineHeight: 1.6 }}>
+                        <Typography variant="body2" sx={{ lineHeight: 1.6, color: '#e0e0e0' }}>
                           {r.content}
                         </Typography>
                       </Box>
@@ -321,12 +325,12 @@ const BoardDetailPage: React.FC = () => {
               ))}
             </Stack>
           ) : (
-            <Box textAlign="center" py={6}>
-              <ReplyIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-              <Typography variant="h6" color="text.secondary" gutterBottom>
+            <Box textAlign="center" py={6} bgcolor="#1e1e1e">
+              <ReplyIcon sx={{ fontSize: 48, color: '#666', mb: 2 }} />
+              <Typography variant="h6" sx={{ color: '#bbbbbb' }} gutterBottom>
                 아직 답변이 없습니다
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{ color: '#999' }}>
                 첫 번째 답변을 작성해보세요
               </Typography>
             </Box>
@@ -334,9 +338,9 @@ const BoardDetailPage: React.FC = () => {
         </Box>
 
         {/* 답변 작성 */}
-        <Box sx={{ p: 3, borderTop: '1px solid #e0e0e0', bgcolor: '#fafafa' }}>
+        <Box sx={{ p: 3, borderTop: '1px solid #333', bgcolor: '#2a2a2a' }}>
           <Stack spacing={2}>
-            <Typography variant="subtitle1" fontWeight="bold">
+            <Typography variant="subtitle1" fontWeight="bold" sx={{ color: '#ffffff' }}>
               답변 작성
             </Typography>
             <TextField
@@ -350,7 +354,22 @@ const BoardDetailPage: React.FC = () => {
               sx={{
                 '& .MuiOutlinedInput-root': {
                   borderRadius: 2,
-                  bgcolor: 'white'
+                  bgcolor: '#3a3a3a',
+                  '& fieldset': {
+                    borderColor: '#555'
+                  },
+                  '&:hover fieldset': {
+                    borderColor: currentDeptInfo.color
+                  },
+                  '&.Mui-focused fieldset': {
+                    borderColor: currentDeptInfo.color
+                  }
+                },
+                '& .MuiInputBase-input': {
+                  color: '#ffffff'
+                },
+                '& .MuiInputBase-input::placeholder': {
+                  color: '#aaa'
                 }
               }}
             />

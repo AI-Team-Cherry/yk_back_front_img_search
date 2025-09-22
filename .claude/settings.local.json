@@ -22,7 +22,9 @@
       "Bash(powershell:*)",
       "Bash(venvScripts:*)",
       "Bash(venvScriptspip install sentence-transformers)",
-      "Bash(C:Final_Cherryyk_back_front_img_searchvenvScriptspip.exe install sentence-transformers)"
+      "Bash(C:Final_Cherryyk_back_front_img_searchvenvScriptspip.exe install sentence-transformers)",
+      "Bash(tasklist)",
+      "Bash(.venvScriptsactivate)"
     ],
     "deny": [],
     "ask": []
