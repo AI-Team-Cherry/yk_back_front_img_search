@@ -7,9 +7,9 @@ class ApiConfig {
 
   // 가능한 API 서버 주소들 (우선순위 순)
   private readonly POSSIBLE_URLS = [
-    'http://localhost:8001',
+    'http://localhost:8080',
+    'http://127.0.0.1:8080',
     'http://localhost:8000',
-    'http://127.0.0.1:8001',
     'http://127.0.0.1:8000'
   ];
 
@@ -42,7 +42,7 @@ class ApiConfig {
     }
 
     // 모든 연결 실패시 기본값 사용
-    const fallbackUrl = 'http://localhost:8001';
+    const fallbackUrl = 'http://localhost:8080';
     console.error('⚠️ 모든 API 서버 연결 실패. 기본 포트 사용:', fallbackUrl);
     this.baseURL = fallbackUrl;
     this.isInitialized = true;

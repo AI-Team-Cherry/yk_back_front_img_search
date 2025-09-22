@@ -215,20 +215,26 @@ async def compose_fashion_images(
     custom_prompt: Optional[str] = Form(None, description="사용자 정의 프롬프트")
 ):
     """패션 모델에게 옷을 착용시키는 이미지 합성 API"""
+    print(f"[DEBUG] /compose-fashion API 호출됨!")
+    print(f"[DEBUG] 모델 이미지: {model_image.filename}")
     try:
         if not gemini_service:
             raise HTTPException(status_code=503, detail="Gemini 서비스를 사용할 수 없습니다. API 키를 확인해주세요.")
 
-        # 모델 이미지 검증
-        if not model_image.content_type or not model_image.content_type.startswith('image/'):
-            raise HTTPException(status_code=400, detail="모델 이미지는 이미지 파일이어야 합니다.")
+        # 모델 이미지 검증 (임시로 비활성화)
+        print(f"[DEBUG] 모델 이미지 - 파일명: {model_image.filename}, content_type: {model_image.content_type}")
+        # 임시로 모든 파일 허용
+        # if not model_image.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+        #     raise HTTPException(status_code=400, detail="모델 이미지는 이미지 파일이어야 합니다.")
 
         # 의류 이미지들을 리스트로 수집
         clothing_images = []
         for clothing_file in [clothing_1, clothing_2, clothing_3, clothing_4]:
             if clothing_file:
-                if not clothing_file.content_type or not clothing_file.content_type.startswith('image/'):
-                    raise HTTPException(status_code=400, detail="모든 의류 이미지는 이미지 파일이어야 합니다.")
+                print(f"[DEBUG] 의류 이미지 - 파일명: {clothing_file.filename}, content_type: {clothing_file.content_type}")
+                # 임시로 모든 파일 허용
+                # if not clothing_file.filename.lower().endswith(('.jpg', '.jpeg', '.png', '.webp')):
+                #     raise HTTPException(status_code=400, detail="모든 의류 이미지는 이미지 파일이어야 합니다.")
                 clothing_images.append(clothing_file)
 
         if not clothing_images:
@@ -240,33 +246,37 @@ async def compose_fashion_images(
         print(f"[Fashion Compose] 모델: {model_image.filename}, 의류 개수: {len(clothing_images)}")
 
         # Gemini 서비스로 이미지 합성 요청
+        print(f"[DEBUG] Gemini 서비스 호출 시작...")
         gemini_result = await gemini_service.compose_fashion_images(
             model_image=model_image,
             clothing_images=clothing_images,
             custom_prompt=custom_prompt
         )
+        print(f"[DEBUG] Gemini 서비스 호출 완료: {gemini_result}")
+        print(f"[DEBUG] Gemini result type: {type(gemini_result)}")
 
-        # 이미지가 생성되었는지 확인
-        if gemini_result["type"] == "fashion_image_generation":
-            return {
-                "message": "패션 이미지 합성이 완료되었습니다",
-                "model_image": model_image.filename,
-                "clothing_count": len(clothing_images),
-                "image_url": gemini_result["image_url"],
-                "analysis": gemini_result["analysis"],
-                "type": gemini_result["type"],
-                "processing_time": "2.5초"
+        # 항상 동일한 응답 구조 사용
+        image_url = gemini_result.get("image_url")
+
+        # JSON 파일이면 이미지 URL로 사용하지 않음
+        if image_url and image_url.endswith('.json'):
+            print(f"[WARNING] JSON 파일을 이미지 URL로 사용하지 않음: {image_url}")
+            image_url = None
+
+        return {
+            "message": "패션 이미지 처리가 완료되었습니다",
+            "model_image": model_image.filename,
+            "clothing_count": len(clothing_images),
+            "image_url": image_url,  # 실제 이미지 파일만
+            "result_url": None,  # JSON URL은 사용하지 않음
+            "analysis": gemini_result.get("analysis", "패션 분석이 완료되었습니다."),
+            "type": gemini_result.get("type", "fashion_analysis"),
+            "processing_time": "2.5초",
+            "debug_info": {
+                "original_image_url": gemini_result.get("image_url"),
+                "gemini_type": gemini_result.get("type")
             }
-        else:
-            return {
-                "message": "패션 이미지 분석이 완료되었습니다",
-                "model_image": model_image.filename,
-                "clothing_count": len(clothing_images),
-                "result_url": gemini_result.get("file_url"),
-                "analysis": gemini_result["analysis"],
-                "type": gemini_result["type"],
-                "processing_time": "2.5초"
-            }
+        }
 
     except HTTPException:
         raise

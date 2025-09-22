@@ -45,6 +45,11 @@ const SharedAnalysesPage: React.FC = () => {
 
   const navigate = useNavigate();
 
+  // 제목에서 "데이터 분석:" 접두사 제거하는 함수
+  const cleanTitle = (title: string) => {
+    return title.replace(/^데이터\s*분석\s*:\s*/i, '').trim();
+  };
+
   const categories = [
     { value: 'all', label: '전체' },
     { value: 'sales', label: '매출 분석' },
@@ -189,12 +194,12 @@ const SharedAnalysesPage: React.FC = () => {
             <Card sx={{ height: '100%' }}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
-                  {analysis.title || analysis.query || '제목 없음'}
+                  {cleanTitle(analysis.title || analysis.query || '데이터 탐색 분석')}
                 </Typography>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 2 }}>
-                  <Avatar>{analysis.sharedBy.employeeId.charAt(0)}</Avatar>
+                  <Avatar>{analysis.sharedBy.name ? analysis.sharedBy.name.charAt(0) : analysis.sharedBy.employeeId.charAt(0)}</Avatar>
                   <Box>
-                    <Typography variant="subtitle2">{analysis.sharedBy.employeeId}</Typography>
+                    <Typography variant="subtitle2">{analysis.sharedBy.name || analysis.sharedBy.employeeId}</Typography>
                     <Typography variant="caption" color="text.secondary">
                       {analysis.sharedBy.department}
                     </Typography>
@@ -236,30 +241,30 @@ const SharedAnalysesPage: React.FC = () => {
             <React.Fragment key={analysis.id}>
               <ListItem>
                 <ListItemIcon>
-                  <Avatar>{analysis.sharedBy.employeeId.charAt(0)}</Avatar>
+                  <Avatar>{analysis.sharedBy.name ? analysis.sharedBy.name.charAt(0) : analysis.sharedBy.employeeId.charAt(0)}</Avatar>
                 </ListItemIcon>
                 <ListItemText
                   primary={
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                       <Typography variant="subtitle1">
-                        {analysis.title || analysis.query || '제목 없음'}
+                        {cleanTitle(analysis.title || analysis.query || '데이터 탐색 분석')}
                       </Typography>
                       <Chip label={analysis.category} size="small" />
                     </Box>
                   }
                   secondary={
-                    <Box sx={{ mt: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        공유자: {analysis.sharedBy.employeeId} ({analysis.sharedBy.department}) | 
+                    <React.Fragment>
+                      <span style={{ display: 'block', marginTop: '4px' }}>
+                        공유자: {analysis.sharedBy.name || analysis.sharedBy.employeeId} ({analysis.sharedBy.department}) |
                         공유일: {new Date(analysis.sharedAt).toLocaleDateString('ko-KR')}
-                      </Typography>
-                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
+                      </span>
+                      <span style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px' }}>
                         <Rating value={analysis.rating} readOnly size="small" />
-                        <Typography variant="caption">
+                        <span style={{ fontSize: '0.75rem' }}>
                           사용 {analysis.usageCount}회
-                        </Typography>
-                      </Box>
-                    </Box>
+                        </span>
+                      </span>
+                    </React.Fragment>
                   }
                 />
                 <ListItemSecondaryAction>

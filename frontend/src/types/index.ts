@@ -43,6 +43,19 @@ export interface AnalysisResult {
   prediction_basis?: string;
   error?: string;
   raw_response?: AIResponse; // 백엔드에서 받은 원본 응답 저장
+
+  // DataAnalyticsDashboard 스타일 결과를 위한 추가 필드들
+  mongodb_query?: string;
+  columns?: string[];
+  sample_data?: any[];
+  csv_data?: string;
+  total_count?: number;
+  chart_options?: {
+    type: string;
+    showGrid: boolean;
+    showLegend: boolean;
+    dataLimit: number;
+  };
 }
 
 // 새로운 백엔드 AI 응답 타입 정의
@@ -130,6 +143,9 @@ export interface SharedAnalysis {
   query: string;
   title: string;
   tags: string[];
+
+  // 백엔드에서 직접 오는 결과 데이터
+  result?: any;
 }
 
 // API Response types
