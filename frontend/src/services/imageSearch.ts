@@ -94,11 +94,12 @@ export const searchImagesByFile = async (file: File, limit: number = 9): Promise
 };
 
 // 실제 고급 이미지 검색 (인체 분할 + 의류 영역 추출 + 카테고리 분류)
-export const searchImagesByFileAdvanced = async (file: File, limit: number = 9): Promise<SearchResult> => {
+export const searchImagesByFileAdvanced = async (file: File, limit: number = 9, clothingType: string = 'all'): Promise<SearchResult> => {
   try {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('limit', limit.toString());
+    formData.append('clothing_type', clothingType);
 
     const response = await api.post('/api/images/search-by-image-advanced', formData, {
       headers: {

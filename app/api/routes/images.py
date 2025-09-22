@@ -214,32 +214,32 @@ async def search_images_by_file(file: UploadFile = File(...), limit: int = 9):
         if image.format not in ['JPEG', 'PNG', 'WEBP']:
             raise HTTPException(status_code=400, detail="지원하지 않는 이미지 형식입니다. JPEG, PNG, WEBP만 지원됩니다.")
         
-        # 실제 이미지 검색 수행 (텍스트 검색과 동일한 구조로 통일)
-        service = EnhancedImageSearchService()
+        # 실제 이미지 검색 수행 (고화질 이미지 우선 선택)
+        service = get_search_service()
         search_results = service.search_by_image(image, limit)
         
-        # 텍스트 검색과 동일한 응답 구조로 변환
+        # 고화질 이미지 우선 선택하도록 결과 필터링
         formatted_images = []
         for result in search_results:
-            formatted_images.append({
-                "id": str(result.get("id", "")),
-                "filename": str(result.get("title", "")),  # title을 filename으로 사용
-                "url": str(result.get("url", "")),
-                "title": str(result.get("title", "")),
-                "description": f"AI 이미지 검색 결과",
-                "tags": ["AI검색", "이미지매칭"],
-                "relevance": float(result.get("similarity", 0.0)),
-                # 텍스트 검색과 동일한 구조
-                "similarity": float(result.get("similarity", 0.0)),
-                "product_name": str(result.get("product_name", "")),
-                "price": int(result.get("price", 0)),
-                "rating_avg": float(result.get("rating_avg", 0.0)),
-                "brand": str(result.get("brand", "")),
-                # 기본 검색에서도 카테고리 정보 추가 (고급 검색과 동일한 구조)
-                "clothing_category": str(result.get("clothing_category", "Unknown")),
-                "category_confidence": float(result.get("category_confidence", 0.0)),
-                "detailed_analysis": service._convert_analysis_to_json_safe(result.get("detailed_analysis", {}))
-            })
+            # 이미지 크기 확인 및 고화질 우선 선택
+            img_file = result.get("url", "").replace("/api/images/file/", "")
+            img_path = f"app/img_search/only_product_images/{img_file}"
+            
+            try:
+                from PIL import Image
+                with Image.open(img_path) as img:
+                    width, height = img.size
+                    # 고화질 기준: 500x600 이상
+                    if width >= 500 and height >= 600:
+                        formatted_images.append(result)
+                    elif len(formatted_images) < limit:  # 고화질이 부족하면 중화질도 포함
+                        formatted_images.append(result)
+            except:
+                # 이미지 열기 실패 시 그대로 추가
+                formatted_images.append(result)
+            
+            if len(formatted_images) >= limit:
+                break
         
         return {
             "query": f"이미지: {file.filename}",
@@ -257,7 +257,11 @@ async def search_images_by_file(file: UploadFile = File(...), limit: int = 9):
 
 
 @router.post("/search-by-image-advanced")
-async def search_images_by_file_advanced(file: UploadFile = File(...), limit: int = 9):
+async def search_images_by_file_advanced(
+    file: UploadFile = File(...), 
+    limit: int = 9,
+    clothing_type: str = "all"
+):
     """실제 고급 이미지 검색 API (인체 분할 + 의류 영역 추출 + 카테고리 분류)"""
     try:
         limit = _clamp_limit(limit)
@@ -289,9 +293,9 @@ async def search_images_by_file_advanced(file: UploadFile = File(...), limit: in
         if image.format not in ['JPEG', 'PNG', 'WEBP']:
             raise HTTPException(status_code=400, detail="지원하지 않는 이미지 형식입니다. JPEG, PNG, WEBP만 지원됩니다.")
         
-        # 실제 고급 이미지 검색 수행
+        # 실제 고급 이미지 검색 수행 (상의/하의 구분)
         service = get_search_service()
-        search_results = service.search_by_image_advanced(image, limit)
+        search_results = service.search_by_image_advanced(image, limit, clothing_type)
         
         # 텍스트 검색과 동일한 응답 구조로 변환
         formatted_images = []

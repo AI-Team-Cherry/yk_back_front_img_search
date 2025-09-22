@@ -91,6 +91,7 @@ const ImageSearchPage: React.FC = () => {
   const [searchMode, setSearchMode] = useState<'text' | 'image'>('text');
   const [detailModalOpen, setDetailModalOpen] = useState(false);
   const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
+  const [clothingType, setClothingType] = useState<'all' | 'top' | 'bottom'>('all');
   const [modalImage, setModalImage] = useState<ImageResult | null>(null);
 
   // 추천 검색어 예시
@@ -163,7 +164,7 @@ const ImageSearchPage: React.FC = () => {
       } else {
         // 이미지 검색 (기본 또는 고급)
         if (isAdvancedSearch) {
-          searchResult = await searchImagesByFileAdvanced(uploadedImage!, 9);
+          searchResult = await searchImagesByFileAdvanced(uploadedImage!, 9, clothingType);
         } else {
           searchResult = await searchImagesByFile(uploadedImage!, 9);
         }
@@ -409,38 +410,74 @@ const ImageSearchPage: React.FC = () => {
               <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
                 {/* 고급 검색 옵션 (이미지 검색 모드에서만 표시) */}
                 {searchMode === 'image' && uploadedImage && (
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
-                    <Typography variant="body2" color="text.secondary">
-                      검색 옵션:
-                    </Typography>
-                    <Button
-                      variant={isAdvancedSearch ? "contained" : "outlined"}
-                      size="small"
-                      startIcon={<AutoAwesome />}
-                      onClick={() => setIsAdvancedSearch(!isAdvancedSearch)}
-                      sx={{ 
-                        fontSize: '0.8rem',
-                        px: 2,
-                        py: 0.5,
-                        ...(isAdvancedSearch && {
-                          bgcolor: 'primary.main',
-                          color: 'white',
-                          '&:hover': {
-                            bgcolor: 'primary.dark',
-                          }
-                        })
-                      }}
-                    >
-                      {isAdvancedSearch ? '고급 검색 ON' : '고급 검색 OFF'}
-                    </Button>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 1 }}>
+                    {/* 고급 검색 토글 */}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        검색 옵션:
+                      </Typography>
+                      <Button
+                        variant={isAdvancedSearch ? "contained" : "outlined"}
+                        size="small"
+                        startIcon={<AutoAwesome />}
+                        onClick={() => setIsAdvancedSearch(!isAdvancedSearch)}
+                        sx={{ 
+                          fontSize: '0.8rem',
+                          px: 2,
+                          py: 0.5,
+                          ...(isAdvancedSearch && {
+                            bgcolor: 'primary.main',
+                            color: 'white',
+                            '&:hover': {
+                              bgcolor: 'primary.dark',
+                            }
+                          })
+                        }}
+                      >
+                        {isAdvancedSearch ? '고급 검색 ON' : '고급 검색 OFF'}
+                      </Button>
+                      {isAdvancedSearch && (
+                        <Chip 
+                          label="AI 인체분할 + 카테고리분류" 
+                          size="small" 
+                          color="primary" 
+                          variant="outlined"
+                          sx={{ fontSize: '0.7rem' }}
+                        />
+                      )}
+                    </Box>
+                    
+                    {/* 의류 타입 선택 (고급 검색 ON일 때만) */}
                     {isAdvancedSearch && (
-                      <Chip 
-                        label="AI 인체분할 + 카테고리분류" 
-                        size="small" 
-                        color="primary" 
-                        variant="outlined"
-                        sx={{ fontSize: '0.7rem' }}
-                      />
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body2" color="text.secondary">
+                          의류 타입:
+                        </Typography>
+                        <Button
+                          variant={clothingType === 'all' ? "contained" : "outlined"}
+                          size="small"
+                          onClick={() => setClothingType('all')}
+                          sx={{ fontSize: '0.7rem', px: 1.5, py: 0.5 }}
+                        >
+                          전체
+                        </Button>
+                        <Button
+                          variant={clothingType === 'top' ? "contained" : "outlined"}
+                          size="small"
+                          onClick={() => setClothingType('top')}
+                          sx={{ fontSize: '0.7rem', px: 1.5, py: 0.5 }}
+                        >
+                          상의
+                        </Button>
+                        <Button
+                          variant={clothingType === 'bottom' ? "contained" : "outlined"}
+                          size="small"
+                          onClick={() => setClothingType('bottom')}
+                          sx={{ fontSize: '0.7rem', px: 1.5, py: 0.5 }}
+                        >
+                          하의
+                        </Button>
+                      </Box>
                     )}
                   </Box>
                 )}
@@ -458,7 +495,7 @@ const ImageSearchPage: React.FC = () => {
                   }
                   sx={{ px: 4 }}
                 >
-                    {isLoading ? '검색 중...' : (isAdvancedSearch ? '고급 검색 시작' : '검색 시작')}
+                    {isLoading ? '검색 중...' : (searchMode === 'image' && isAdvancedSearch ? '고급 검색 시작' : '검색 시작')}
                 </Button>
                 <Button
                   variant="outlined"
@@ -515,7 +552,7 @@ const ImageSearchPage: React.FC = () => {
                     </Typography>
                   </Box>
                   
-                  <ImageList sx={{ width: '100%', height: 'auto' }} cols={3} gap={16}>
+                  <ImageList sx={{ width: '100%', height: 'auto' }} cols={3} gap={20}>
                     {result.images.map((image) => (
                       <ImageListItem 
                         key={image.id}
@@ -527,7 +564,7 @@ const ImageSearchPage: React.FC = () => {
                               boxShadow: 2,
                           },
                             height: 'auto',
-                            minHeight: '380px'
+                            minHeight: '400px'  // 480px → 400px로 조정 (240px 이미지에 맞춤)
                         }}
                         onClick={() => handleImageClick(image)}
                       >
@@ -538,8 +575,10 @@ const ImageSearchPage: React.FC = () => {
                           loading="lazy"
                           style={{
                             width: '100%',
-                              height: '220px',
-                            objectFit: 'cover'
+                            height: '240px',  // 320px → 240px로 축소 (원본 320px보다 작게)
+                            objectFit: 'contain',  // contain 유지 (압축 방지)
+                            imageRendering: 'crisp-edges',  // 이미지 렌더링 품질 향상
+                            backgroundColor: '#f5f5f5'  // 배경색 추가 (이미지 영역 명확화)
                           }}
                           onError={(e) => {
                               (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x250?text=Image+Not+Found';

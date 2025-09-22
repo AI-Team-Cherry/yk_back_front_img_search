@@ -771,21 +771,67 @@ class EnhancedImageSearchService:
         
         return masked
     
-    def search_by_image_advanced(self, image: Image.Image, top_k: int = 9) -> List[Dict[str, Any]]:
+    def crop_clothes_region_by_type(self, pil_img: Image.Image, mask: np.ndarray, clothing_type: str) -> np.ndarray:
+        """실제 상의/하의 구분 의류 영역 추출"""
+        np_img = np.array(pil_img)
+        
+        # 의류 마스크 생성 (인체 분할 마스크 사용)
+        clothes_mask = mask.astype(np.uint8)
+        if clothes_mask.sum() == 0:
+            # 마스크가 없으면 전체 이미지 반환
+            return np_img
+        
+        # 바운딩 박스 계산
+        y_idx, x_idx = np.where(clothes_mask)
+        if len(y_idx) == 0 or len(x_idx) == 0:
+            return np_img
+            
+        y1, y2 = y_idx.min(), y_idx.max()
+        x1, x2 = x_idx.min(), x_idx.max()
+        
+        # 상의/하의 구분 로직
+        if clothing_type == "top":
+            # 상반신만 추출 (상단 60%)
+            y_split = y1 + int((y2 - y1) * 0.6)
+            y2 = min(y_split, y2)
+            print(f"상의 영역 추출: Y축 {y1}-{y2}")
+            
+        elif clothing_type == "bottom":
+            # 하반신만 추출 (하단 60%)
+            y_split = y1 + int((y2 - y1) * 0.4)
+            y1 = max(y_split, y1)
+            print(f"하의 영역 추출: Y축 {y1}-{y2}")
+            
+        else:  # "all"
+            # 전체 영역 사용
+            print(f"전체 영역 추출: Y축 {y1}-{y2}")
+        
+        # 크롭
+        cropped = np_img[y1:y2, x1:x2]
+        mask_crop = clothes_mask[y1:y2, x1:x2]
+        mask_3c = np.stack([mask_crop]*3, axis=-1)
+        
+        # 배경을 흰색으로 설정 (의류만 남기고 배경 제거)
+        bg = np.ones_like(cropped, dtype=np.uint8) * 255
+        masked = np.where(mask_3c, cropped, bg)
+        
+        return masked
+    
+    def search_by_image_advanced(self, image: Image.Image, top_k: int = 9, clothing_type: str = "all") -> List[Dict[str, Any]]:
         """실제 고급 이미지 검색 (인체 분할 + 의류 영역 추출 + 카테고리 분류)"""
         start_time = time.time()
         
-        print(f"고급 이미지 검색 시작: {image.size}")
+        print(f"고급 이미지 검색 시작: {image.size}, 의류 타입: {clothing_type}")
         
         try:
             # 1. 인체 분할
             human_mask = parse_human_parts(image)
             print("인체 분할 완료")
             
-            # 2. 의류 영역 추출
-            clothing_region = self.crop_clothes_region_top_bottom(image, human_mask)
+            # 2. 의류 영역 추출 (상의/하의 구분)
+            clothing_region = self.crop_clothes_region_by_type(image, human_mask, clothing_type)
             clothing_image = Image.fromarray(clothing_region)
-            print("의류 영역 추출 완료")
+            print(f"의류 영역 추출 완료: {clothing_type}")
             
             # 3. 카테고리 분류
             category_results = predict_clothing_category(clothing_image, topk=2)
