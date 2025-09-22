@@ -1,129 +1,106 @@
-from fastapi import APIRouter, HTTPException, Query
+from __future__ import annotations
+from fastapi import APIRouter, HTTPException, Query, UploadFile, File
 from fastapi.responses import FileResponse
-from typing import List, Optional
-from app.services.image_gen import generate_image
-import os
+from typing import Optional
 from pathlib import Path
+import os, io
+from PIL import Image
+from time import perf_counter
+
+from app.services.embedding_index import init_indices, search_by_text, search_by_image
 
 router = APIRouter()
+IMAGES_DIR = Path(__file__).resolve().parents[2] / "img_search" / "only_product_images"
 
-# 이미지 디렉토리 경로
-IMAGES_DIR = Path(__file__).parent.parent.parent / "img_search" / "only_product_images"
+def _clamp(n: int) -> int:
+    try: n = int(n)
+    except: n = 9
+    return max(1, min(n, 9))
+
+def _safe_path(filename: str) -> Path:
+    if ".." in filename or "/" in filename:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    p = IMAGES_DIR / filename
+    if not p.exists() or not p.is_file():
+        raise HTTPException(status_code=404, detail="Image not found")
+    return p
+
+def _resp(images: list, q_orig: str, q_used: str, took: float=0.0) -> dict:
+    return {
+        "queryOriginal": q_orig,
+        "queryUsed": q_used,
+        "images": images,
+        "totalCount": len(images),
+        "searchTime": took
+    }
+
+@router.on_event("startup")
+async def _startup():
+    try:
+        init_indices()
+    except Exception as e:
+        print("[ImageSearch] init failed:", repr(e))
 
 @router.get("/list")
-async def list_images(
-    query: Optional[str] = Query(None, description="검색 쿼리"),
-    limit: int = Query(20, description="반환할 이미지 개수")
-):
-    """이미지 목록 반환"""
-    try:
-        # 실제 이미지 파일들만 필터링 (.jpg 확장자만)
-        image_files = [
-            f for f in os.listdir(IMAGES_DIR) 
-            if f.endswith('.jpg') and not f.endswith('.jpg:Zone.Identifier')
-        ]
-        
-        # 검색 쿼리가 있으면 파일명 기반 필터링 (간단한 구현)
-        if query:
-            query_lower = query.lower()
-            image_files = [f for f in image_files if query_lower in f.lower()]
-        
-        # limit 적용
-        image_files = image_files[:limit]
-        
-        # 이미지 정보 구성
-        images = []
-        for idx, filename in enumerate(image_files):
-            # 파일명에서 정보 추출 (예: 2005113_5.jpg -> id: 2005113)
-            base_name = filename.replace('.jpg', '')
-            parts = base_name.split('_')
-            
-            images.append({
-                "id": str(idx + 1),
-                "filename": filename,
-                "url": f"/api/images/file/{filename}",
-                "title": f"상품 {parts[0]}" if parts else filename,
-                "description": f"이미지 번호: {base_name}",
-                "tags": [f"상품번호_{parts[0]}"] if parts else [],
-                "relevance": 0.95 - (idx * 0.05)  # 임시 관련도
-            })
-        
-        return {
-            "query": query or "",
-            "images": images,
-            "totalCount": len(images),
-            
-        }
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+async def list_images(query: Optional[str]=Query(None), limit: int=9):
+    limit = _clamp(limit)
+    q_orig = (query or "").strip()
+    q_used = q_orig
+    files = [f for f in os.listdir(IMAGES_DIR)
+             if f.lower().endswith((".jpg",".jpeg",".png",".webp"))
+             and not f.lower().endswith(".jpg:zone.identifier")]
+    if q_used:
+        files = [f for f in files if q_used.lower() in f.lower()]
+    files = files[:limit]
+    images = [{
+        "id": str(i+1),
+        "filename": fn,
+        "url": f"/api/images/file/{fn}",
+        "title": f"상품 {i+1}",
+        "description": fn,
+        "tags": [],
+        "relevance": max(0.0, 0.95 - 0.05*i)
+    } for i, fn in enumerate(files)]
+    return _resp(images, q_orig, q_used, 0.0)
 
 @router.get("/file/{filename}")
 async def get_image(filename: str):
-    """특정 이미지 파일 반환"""
-    # 보안을 위해 경로 탐색 방지
-    if ".." in filename or "/" in filename:
-        raise HTTPException(status_code=400, detail="Invalid filename")
-    
-    file_path = IMAGES_DIR / filename
-    
-    if not file_path.exists() or not file_path.is_file():
-        raise HTTPException(status_code=404, detail="Image not found")
-    
-    return FileResponse(
-        path=str(file_path),
-        media_type="image/jpeg",
-        headers={
-            "Cache-Control": "public, max-age=3600",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET",
-            "Access-Control-Allow-Headers": "*",
-        }
-    )
+    return FileResponse(str(_safe_path(filename)), media_type="image/jpeg")
 
 @router.get("/download/{filename}")
 async def download_image(filename: str):
-    """이미지 다운로드"""
-    # 보안을 위해 경로 탐색 방지
-    if ".." in filename or "/" in filename:
-        raise HTTPException(status_code=400, detail="Invalid filename")
-    
-    file_path = IMAGES_DIR / filename
-    
-    if not file_path.exists() or not file_path.is_file():
-        raise HTTPException(status_code=404, detail="Image not found")
-    
-    return FileResponse(
-        path=str(file_path),
-        media_type="application/octet-stream",
-        filename=filename,
-        headers={
-            "Content-Disposition": f"attachment; filename={filename}",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET",
-            "Access-Control-Allow-Headers": "*",
-            "Access-Control-Expose-Headers": "Content-Disposition",
-        }
-    )
+    p = _safe_path(filename)
+    return FileResponse(str(p), media_type="application/octet-stream", filename=filename,
+                        headers={"Content-Disposition": f"attachment; filename={filename}"})
 
 @router.get("/search")
-async def search_images(q: str, limit: int = 20):
-    
-
-    """자연어 검색 API"""
-    # 현재는 간단한 키워드 매칭으로 구현
-    # 실제로는 여기서 벡터 검색이나 AI 모델을 사용할 수 있음
-    
+async def search_images(q: str, limit: int = 9):
+    limit = _clamp(limit)
+    q_orig = (q or "").strip()
+    q_used = q_orig
     try:
-        # AI 이미지 검색 사용
-        result = await generate_image(q, limit)
-        return result
-        
+        t0 = perf_counter()
+        images = search_by_text(q_used, topk=limit)
+        took = perf_counter() - t0
+        return _resp(images[:limit], q_orig, q_used, took)
     except Exception as e:
-        # AI 검색 실패 시 기본 검색으로 fallback
-        print(f"AI 검색 실패: {e}")
-        try:
-            result = await list_images(query=q, limit=limit)
-            return result
-        except Exception as fallback_error:
-            raise HTTPException(status_code=500, detail=f"검색 실패: {str(e)}")
+        # 상세 에러 표시 (개발 단계에서만)
+        raise HTTPException(status_code=500, detail=f"[TEXT SEARCH ERROR] {repr(e)}")
+
+@router.post("/search-by-image")
+async def search_images_by_file(file: UploadFile = File(...), limit: int = 9):
+    limit = _clamp(limit)
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(status_code=400, detail="이미지 파일만 업로드 가능합니다.")
+    raw = await file.read()
+    try:
+        pil = Image.open(io.BytesIO(raw)).convert("RGB")
+    except:
+        raise HTTPException(status_code=400, detail="손상된 이미지거나 인식할 수 없습니다.")
+    try:
+        t0 = perf_counter()
+        images = search_by_image(pil, topk=limit)
+        took = perf_counter() - t0
+        return _resp(images[:limit], f"이미지 파일: {file.filename}", "image_search", took)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"[IMAGE SEARCH ERROR] {repr(e)}")

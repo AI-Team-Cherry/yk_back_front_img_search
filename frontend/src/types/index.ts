@@ -113,15 +113,23 @@ export interface VegaLiteSpec {
 // Shared Analysis
 export interface SharedAnalysis {
   id: string;
+  analysisId: string;
+  shareId: string;
+  shareUrl: string;
+  createdAt: Date;
+  accessCount: number;
+  analysis?: Analysis;
+
+  // 호환성을 위한 추가 필드들
   originalAnalysisId: string;
   sharedBy: User;
   sharedAt: Date;
   usageCount: number;
   rating: number;
   category: string;
-  query?: string;
-  title?: string;
-  tags?: string[];
+  query: string;
+  title: string;
+  tags: string[];
 }
 
 // API Response types
@@ -134,6 +142,7 @@ export interface ApiResponse<T> {
 
 export interface QueryRequest {
   query: string;
+  collections?: string[];
   use_ai_mode?: boolean;
   tags?: string[];
 }

@@ -1,121 +1,95 @@
-# 🍒 Cherry Back Project - Python Dependencies
-# Updated: 2024-12-18
-#
-# 설치 방법:
-# pip install -r requirements.txt
-#
-# Windows 사용자:
-# pip install -r requirements_windows.txt (권장)
-#
-# 선택적 패키지 (C++ 빌드 도구 필요):
-# pip install hnswlib==0.7.0 chroma-hnswlib==0.7.6
-
-# ================================
-# Web Framework & Server
-# ================================
-fastapi==0.114.2
-uvicorn[standard]==0.30.6
-python-multipart==0.0.9
-starlette==0.38.6
-
-# ================================
-# Database & Data Storage
-# ================================
-motor==3.6.0
-pymongo==4.9.1
-python-dotenv==1.0.1
-
-# ================================
-# Authentication & Security
-# ================================
-passlib[bcrypt]==1.7.4
-PyJWT==2.9.0
-python-jose==3.3.0
+annotated-types==0.7.0
+anyio==4.10.0
 bcrypt==4.3.0
-
-# ================================
-# AI & Machine Learning
-# ================================
-transformers==4.44.2
-torch>=2.8.0
-tokenizers==0.19.1
-sentence-transformers==3.1.1
+certifi==2025.8.3
+charset-normalizer==3.4.3
+click==8.3.0
+colorama==0.4.6
+contourpy==1.3.3
+cycler==0.12.1
+dnspython==2.8.0
+ecdsa==0.19.1
+email-validator==2.3.0
+faiss-cpu==1.12.0
+fastapi==0.116.2
+filelock==3.19.1
+fonttools==4.60.0
+fsspec==2025.9.0
+h11==0.16.0
+httpcore==1.0.9
+httptools==0.6.4
+httpx==0.28.1
 huggingface-hub==0.35.0
-safetensors==0.6.2
-
-# ================================
-# LangGraph & LangChain
-# ================================
-langgraph==0.2.39
+idna==3.10
+Jinja2==3.1.4
+joblib==1.5.2
+jsonpatch==1.33
+jsonpointer==3.0.0
+kiwisolver==1.4.9
+langchain-core==0.3.76
+langgraph==0.6.7
 langgraph-checkpoint==2.1.1
 langgraph-prebuilt==0.6.4
-langgraph-sdk==0.1.74
-langchain-core==0.3.76
-langsmith==0.4.28
-
-# ================================
-# Vector Database & Search
-# ================================
-chromadb==0.5.5
-# hnswlib==0.7.0  # Windows에서 C++ 빌드 도구 필요 - 선택적 설치
-# chroma-hnswlib==0.7.6  # hnswlib 의존성 - 선택적 설치
-
-# ================================
-# Data Processing & Analysis
-# ================================
-pandas==2.2.2
-numpy>=1.26.4
+langgraph-sdk==0.2.8
+langsmith==0.4.29
+MarkupSafe==2.1.5
+matplotlib==3.10.6
+motor==3.7.1
+mpmath==1.3.0
+narwhals==2.5.0
+networkx==3.3
+numpy==1.26.4
+orjson==3.11.3
+ormsgpack==1.10.0
+packaging==25.0
+pandas==2.3.2
+passlib==1.7.4
+pillow==11.0.0
+plotly==6.3.0
+pyasn1==0.6.1
+pydantic==2.11.9
+pydantic_core==2.33.2
+PyJWT==2.10.1
+pymongo==4.15.1
+pyparsing==3.2.4
+python-dateutil==2.9.0.post0
+python-dotenv==1.1.1
+python-jose==3.5.0
+python-multipart==0.0.20
+pytz==2025.2
+PyYAML==6.0.2
+regex==2025.9.18
+requests==2.32.5
+requests-toolbelt==1.0.0
+rsa==4.9.1
+safetensors==0.6.2
 scikit-learn==1.7.2
 scipy==1.16.2
-
-# ================================
-# Image Processing & Computer Vision
-# ================================
-Pillow>=10.0.0
-matplotlib>=3.7.0
-faiss-cpu>=1.7.0  # CPU 버전 (GPU 버전 대신)
-
-# ================================
-# Language Processing
-# ================================
-sentencepiece==0.2.0
-sacremoses==0.1.1
-regex==2025.9.1
-
-# ================================
-# HTTP & Networking
-# ================================
-httpx==0.28.1
-requests==2.32.5
-urllib3==2.5.0
-
-# ================================
-# Data Validation & Serialization
-# ================================
-pydantic[email]==2.9.2  # 이메일 검증 포함
-pydantic-core==2.23.4
-orjson==3.11.3
-
-# ================================
-# Observability & Monitoring
-# ================================
-opentelemetry-api==1.37.0
-opentelemetry-sdk==1.37.0
-opentelemetry-exporter-otlp-proto-grpc==1.37.0
-opentelemetry-instrumentation-fastapi==0.58b0
-
-# ================================
-# Utilities
-# ================================
+seaborn==0.13.2
+six==1.17.0
+sniffio==1.3.1
+starlette==0.48.0
+sympy==1.13.3
+tenacity==9.1.2
+threadpoolctl==3.6.0
+tokenizers==0.22.1
+torch==2.8.0+cpu
 tqdm==4.67.1
-click==8.2.1
+transformers==4.56.2
+typing-inspection==0.4.1
+typing_extensions==4.15.0
+tzdata==2025.2
+urllib3==2.5.0
+uvicorn==0.36.0
+watchfiles==1.1.0
+websockets==15.0.1
+xxhash==3.5.0
+zstandard==0.25.0
 typer==0.17.4
 rich==14.1.0
 python-dateutil>=2.9.0
 packaging>=25.0
 filelock>=3.19.1
-
-# ================================
-# Development & Build Tools
-# ================================
 build>=1.3.0
+altair==5.4.1
+vl-convert-python==1.8.0

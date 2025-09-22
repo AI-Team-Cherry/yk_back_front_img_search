@@ -1,78 +1,198 @@
-import axios from 'axios';
+import axios from "axios";
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || "http://localhost:8001";
 
 const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+    baseURL: API_BASE_URL,
+    headers: {
+        "Content-Type": "application/json",
+    },
 });
 
 // 인증 토큰 추가
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
+    const token = localStorage.getItem("token");
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
 });
 
 export interface ImageResult {
-  id: string;
-  filename: string;
-  url: string;
-  title: string;
-  description?: string;
-  tags?: string[];
-  relevance?: number;
+    id: string;
+    filename: string;
+    url: string;
+    title: string;
+    description?: string;
+    tags?: string[];
+    relevance?: number;
 }
 
 export interface SearchResult {
-  query: string;
-  images: ImageResult[];
-  totalCount: number;
-  searchTime: number;
+    query: string;
+    images: ImageResult[];
+    totalCount: number;
+    searchTime: number;
 }
 
 // 이미지 검색 API
-export const searchImages = async (query: string, limit: number = 20): Promise<SearchResult> => {
-  try {
-    const response = await api.get('/api/images/search', {
-      params: { q: query, limit }
-    });
-    
-    // URL을 절대 경로로 변환
-    const result = response.data;
-    result.images = result.images.map((img: ImageResult) => ({
-      ...img,
-      url: `${API_BASE_URL}${img.url}`
-    }));
-    
-    return result;
-  } catch (error: any) {
-    console.error('Image search error:', error);
-    throw new Error(error.response?.data?.detail || '이미지 검색에 실패했습니다.');
-  }
+export const searchImages = async (
+    query: string,
+    limit: number = 20
+): Promise<SearchResult> => {
+    try {
+        const response = await api.get("/api/images/search", {
+            params: { q: query, limit },
+        });
+
+        // URL을 절대 경로로 변환
+        const result = response.data;
+        result.images = result.images.map((img: ImageResult) => ({
+            ...img,
+            url: `${API_BASE_URL}${img.url}`,
+        }));
+
+        return result;
+    } catch (error: any) {
+        console.error("Image search error:", error);
+        throw new Error(
+            error.response?.data?.detail || "이미지 검색에 실패했습니다."
+        );
+    }
+};
+
+// 이미지 파일로 검색 API
+export const searchImagesByFile = async (file: File): Promise<SearchResult> => {
+    try {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await api.post(
+            "/api/images/search-by-image",
+            formData,
+            {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            }
+        );
+
+        // URL을 절대 경로로 변환
+        const result = response.data;
+        result.images = result.images.map((img: ImageResult) => ({
+            ...img,
+            url: `${API_BASE_URL}${img.url}`,
+        }));
+
+        return result;
+    } catch (error: any) {
+        console.error("Image file search error:", error);
+        throw new Error(
+            error.response?.data?.detail || "이미지 파일 검색에 실패했습니다."
+        );
+    }
 };
 
 // 이미지 목록 조회 API
 export const listImages = async (limit: number = 20): Promise<SearchResult> => {
-  try {
-    const response = await api.get('/api/images/list', {
-      params: { limit }
-    });
-    
-    // URL을 절대 경로로 변환
-    const result = response.data;
-    result.images = result.images.map((img: ImageResult) => ({
-      ...img,
-      url: `${API_BASE_URL}${img.url}`
-    }));
-    
-    return result;
-  } catch (error: any) {
-    console.error('Image list error:', error);
-    throw new Error(error.response?.data?.detail || '이미지 목록 조회에 실패했습니다.');
-  }
+    try {
+        const response = await api.get("/api/images/list", {
+            params: { limit },
+        });
+
+        // URL을 절대 경로로 변환
+        const result = response.data;
+        result.images = result.images.map((img: ImageResult) => ({
+            ...img,
+            url: `${API_BASE_URL}${img.url}`,
+        }));
+
+        return result;
+    } catch (error: any) {
+        console.error("Image list error:", error);
+        throw new Error(
+            error.response?.data?.detail || "이미지 목록 조회에 실패했습니다."
+        );
+    }
 };
+
+// import axios from "axios";
+
+// const API_BASE_URL = process.env.REACT_APP_API_URL || "";
+
+// const api = axios.create({
+//     baseURL: API_BASE_URL || undefined,
+//     headers: { "Content-Type": "application/json" },
+// });
+
+// api.interceptors.request.use((config) => {
+//     const token = localStorage.getItem("token");
+//     if (token) config.headers.Authorization = `Bearer ${token}`;
+//     return config;
+// });
+
+// export type ImageResult = {
+//     id: string;
+//     filename: string;
+//     url: string;
+//     title: string;
+//     description?: string;
+//     tags?: string[];
+//     relevance?: number;
+// };
+
+// export type SearchResult = {
+//     queryOriginal?: string;
+//     queryUsed?: string;
+//     images: ImageResult[];
+//     totalCount: number;
+//     searchTime?: number;
+// };
+
+// function absolutizeURL(url: string): string {
+//     if (!url) return url;
+//     if (/^https?:\/\//i.test(url)) return url;
+//     return `${API_BASE_URL}${url}`;
+// }
+
+// function normalizeResult(res: any): SearchResult {
+//     return {
+//         queryOriginal: res.queryOriginal,
+//         queryUsed: res.queryUsed,
+//         images: (res.images || []).map((img: ImageResult) => ({
+//             ...img,
+//             url: absolutizeURL(img.url),
+//         })),
+//         totalCount: res.totalCount ?? res.images?.length ?? 0,
+//         searchTime: res.searchTime ?? 0,
+//     };
+// }
+
+// export async function listImages(
+//     query?: string,
+//     limit = 9
+// ): Promise<SearchResult> {
+//     const resp = await api.get("/api/images/list", {
+//         params: { query, limit },
+//     });
+//     return normalizeResult(resp.data);
+// }
+
+// export async function searchImages(
+//     q: string,
+//     limit = 9
+// ): Promise<SearchResult> {
+//     const resp = await api.get("/api/images/search", { params: { q, limit } });
+//     return normalizeResult(resp.data);
+// }
+
+// export async function searchImagesByFile(
+//     file: File,
+//     limit = 9
+// ): Promise<SearchResult> {
+//     const form = new FormData();
+//     form.append("file", file);
+//     form.append("limit", String(limit));
+//     const resp = await api.post("/api/images/search-by-image", form);
+//     return normalizeResult(resp.data);
+// }

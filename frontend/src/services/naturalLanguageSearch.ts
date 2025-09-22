@@ -1,10 +1,6 @@
 import axios from 'axios';
-import { mockAnalysisResponses } from '../mockData/analysisResponses';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
-
-// Mock 모드 설정
-const USE_MOCK_DATA = process.env.REACT_APP_USE_MOCK_DATA === 'true';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8001';
 
 // API 클라이언트 설정
 const api = axios.create({
@@ -93,34 +89,11 @@ class NaturalLanguageSearchService {
    * 자연어 검색 실행
    */
   async search(request: NaturalLanguageQueryRequest): Promise<NaturalLanguageQueryResponse> {
-    // Mock 모드일 때는 예시 데이터 반환
-    if (USE_MOCK_DATA) {
-      console.log('🔵 Mock Mode: 자연어 검색 실행', request);
-      
-      // 2초 지연 후 mock 데이터 반환
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const mockData = mockAnalysisResponses.naturalLanguageQuery;
-      
-      return {
-        success: true,
-        query: {
-          collection: request.collection || 'product',
-          operation: 'search',
-          filter: { "category_l1": "상의/스웨트" },
-          options: { sort: { "price": -1 }, limit: 5 }
-        },
-        results: mockData.mongodb_results?.data || [],
-        natural_language: request.query
-      };
-    }
-
     try {
       const response = await api.post('/query/', {
         question: request.query
       });
-      
-      // cherry_back 응답을 NaturalLanguageQueryResponse 형식으로 변환
+
       return {
         success: true,
         query: {

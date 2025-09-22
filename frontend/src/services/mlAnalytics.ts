@@ -1,10 +1,6 @@
 import axios from 'axios';
-import { mockAnalysisResponses, simulateAnalysisProgress } from '../mockData/analysisResponses';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
-
-// Mock 모드 설정
-const USE_MOCK_DATA = process.env.REACT_APP_USE_MOCK_DATA === 'true';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8001/api';
 
 // API 클라이언트 설정
 const api = axios.create({
@@ -84,61 +80,6 @@ class MLAnalyticsService {
    * ML 분석 실행
    */
   async performAnalysis(request: MLAnalysisRequest): Promise<MLAnalysisResult> {
-    // Mock 모드일 때는 예시 데이터 반환
-    if (USE_MOCK_DATA) {
-      console.log('🔵 Mock Mode: ML 분석 실행', request);
-      
-      // 3초 지연 후 mock 데이터 반환
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
-      // 분석 유형에 따른 mock 데이터 생성
-      const mockResult: MLAnalysisResult = {
-        id: 'ml_' + Date.now(),
-        analysis_type: request.analysis_type,
-        collection: request.collection_name,
-        data_count: 1000,
-        ml_result: {
-          analysis_type: request.analysis_type,
-          n_clusters: 5,
-          silhouette_score: 0.85,
-          cluster_sizes: [200, 150, 300, 250, 100],
-          insights: [
-            '고객을 5개 그룹으로 분류했습니다.',
-            'VIP 고객 그룹(300명)이 가장 큰 매출을 기여합니다.',
-            '프리미엄 그룹(250명)은 재구매율이 가장 높습니다.'
-          ],
-          recommendations: [
-            'VIP 고객을 위한 맞춤형 프로모션 기획',
-            '일반 고객을 프리미엄으로 업그레이드하는 전략 수립',
-            '침체 그룹을 위한 재활성화 프로그램 운영'
-          ]
-        },
-        visualizations: [{
-          mark: { type: 'bar', tooltip: true },
-          data: {
-            values: [
-              { cluster: '프리미엄 고객', count: 250, avgPurchase: 450000 },
-              { cluster: 'VIP 고객', count: 300, avgPurchase: 1200000 },
-              { cluster: '일반 고객', count: 200, avgPurchase: 150000 },
-              { cluster: '신규 고객', count: 150, avgPurchase: 80000 },
-              { cluster: '침체 고객', count: 100, avgPurchase: 30000 }
-            ]
-          },
-          encoding: {
-            x: { field: 'cluster', type: 'nominal', title: '고객 그룹' },
-            y: { field: 'count', type: 'quantitative', title: '고객 수' },
-            color: { field: 'avgPurchase', type: 'quantitative', title: '평균 구매 금액' }
-          },
-          title: '고객 그룹별 분포',
-          width: 500,
-          height: 300
-        }],
-        created_at: new Date().toISOString()
-      };
-      
-      return mockResult;
-    }
-    
     try {
       const response = await api.post('/ml/analyze', request);
       return response.data;

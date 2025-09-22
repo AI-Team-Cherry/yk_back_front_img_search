@@ -1,4 +1,3 @@
-cat > .gitignore << 'EOF'
 # Python
 __pycache__/
 *.py[cod]
@@ -32,6 +31,10 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# React Build
+frontend/build/
+frontend/dist/
+
 # Environment variables
 .env
 .env.local
@@ -50,6 +53,7 @@ frontend.log
 # OS
 .DS_Store
 Thumbs.db
+*:Zone.Identifier
 
 # IDE
 .vscode/
@@ -58,10 +62,23 @@ Thumbs.db
 *.swo
 
 # Uploads
-uploads/*
-!uploads/.gitkeep
+uploads/
+temp/
 
-# Large data files (AI models, embeddings, images)
-app/img_search/
-*.csv
-*.zip
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.cover
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Data
+# 이미지 및 생성된 결과물
+*generated_images/
+*only_product_images/
+
+# # 모델 결과나 체크포인트 폴더
+# img_search/cloth_segmentation/checkpoints/

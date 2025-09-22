@@ -4,15 +4,18 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ThemeProviderWrapper } from './contexts/ThemeContext';
 import AppLayout from './components/Layout/AppLayout';
 import LoginPage from './pages/LoginPage';
-import EnhancedDashboardPage from './pages/EnhancedDashboardPage';
 import DraggableDashboardPage from './pages/DraggableDashboardPage';
-import SmartAnalysisPage from './pages/SmartAnalysisPage';
+import DataAnalyticsDashboard from './pages/DataAnalyticsDashboard';
 import MyPage from './pages/MyPage';
 import SharedAnalysesPage from './pages/SharedAnalysesPage';
 import AnalysisDetailPage from './pages/AnalysisDetailPage';
 import SettingsPage from './pages/SettingsPage';
 import LoadingPage from './components/LoadingPage';
 import ImageSearchPage from './pages/ImageSearchPage';
+import FashionModelingPage from './pages/FashionModelingPage';
+import BoardListPage from './pages/BoardListPage';
+import BoardFormPage from './pages/BoardFormPage';
+import BoardDetailPage from './pages/BoardDetailPage';
 
 
 // Protected Route component
@@ -72,8 +75,12 @@ function App() {
             >
               <Route index element={<Navigate to="/dashboard" replace />} />
               <Route path="dashboard" element={<DraggableDashboardPage />} />
-              <Route path="analysis" element={<SmartAnalysisPage />} />
+              <Route path="analysis" element={<DataAnalyticsDashboard />} />
               <Route path="image-search" element={<ImageSearchPage />} />
+              <Route path="fashion-modeling" element={<FashionModelingPage />} />
+              <Route path="boards/:department" element={<BoardListPage />} />
+              <Route path="boards/:department/new" element={<BoardFormPage />} />
+              <Route path="boards/:department/:id" element={<BoardDetailPage />} />
               <Route path="mypage" element={<MyPage />} />
               <Route path="shared" element={<SharedAnalysesPage />} />
               <Route path="analysis/:id" element={<AnalysisDetailPage />} />
