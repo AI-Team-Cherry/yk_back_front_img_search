@@ -38,7 +38,7 @@ def analyze(payload: dict = Body(...)):
         return JSONResponse({"status": "error", "message": "Query too long (max 2000 characters)"}, status_code=400)
 
     try:
-        res = requests.post(COLAB_LLM_API, json={"query": question}, timeout=6000)
+        res = requests.post(COLAB_LLM_API, json={"query": question,"collections": collections}, timeout=6000)
 
         print("=== [LLM 요청 질문] ===", question)
         print("=== [Colab 응답 상태] ===", res.status_code)

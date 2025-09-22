@@ -43,7 +43,6 @@ import ReactMarkdown from "react-markdown";
 import { exportAnalysisToPDF } from "../utils/pdfExport";
 import CollectionSelector from "../components/Collections/CollectionSelector";
 
-
 // ✅ Mongo 결과 테이블
 const renderMongoTable = (docs: any[]) => {
   if (!docs || docs.length === 0) return null;
@@ -78,7 +77,9 @@ const renderMongoTable = (docs: any[]) => {
                   >
                     {key === "main_image" ? (
                       <Avatar
-                        src={`${process.env.REACT_APP_IMG_URL || ""}/${row[key]}.jpg`}
+                        src={`${process.env.REACT_APP_IMG_URL || ""}/${
+                          row[key]
+                        }.jpg`}
                         alt={row.name}
                         variant="square"
                         sx={{ width: 40, height: 40 }}
@@ -204,7 +205,6 @@ const renderCorrelationHeatmap = (correlations: any) => {
   );
 };
 
-
 const SmartAnalysisPage: React.FC = () => {
   const { user } = useAuth();
   const [query, setQuery] = useState("");
@@ -245,12 +245,6 @@ const SmartAnalysisPage: React.FC = () => {
   const handleSubmit = async () => {
     if (!query.trim() || !user?.id) return;
 
-    // 컬렉션 선택 확인
-    if (selectedCollections.length === 0) {
-      setError("분석할 컬렉션을 먼저 선택해주세요.");
-      return;
-    }
-
     console.log("🔍 Selected collections for analysis:", selectedCollections);
     console.log("📝 Query:", query.trim());
 
@@ -266,7 +260,9 @@ const SmartAnalysisPage: React.FC = () => {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        `${process.env.REACT_APP_API_URL || "http://localhost:8001"}/llm-analysis/analyze`,
+        `${
+          process.env.REACT_APP_API_URL || "http://localhost:8000"
+        }/llm-analysis/analyze`,
         {
           method: "POST",
           headers: {
@@ -275,7 +271,7 @@ const SmartAnalysisPage: React.FC = () => {
           },
           body: JSON.stringify({
             query: query.trim(),
-            collections: selectedCollections
+            collections: selectedCollections,
           }),
         }
       );
@@ -310,7 +306,9 @@ const SmartAnalysisPage: React.FC = () => {
     if (!result) return;
     try {
       const response = await fetch(
-        `${process.env.REACT_APP_API_URL || "http://localhost:8000"}/llm-analysis/report`,
+        `${
+          process.env.REACT_APP_API_URL || "http://localhost:8000"
+        }/llm-analysis/report`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -362,7 +360,10 @@ const SmartAnalysisPage: React.FC = () => {
                   <Typography variant="subtitle2" gutterBottom>
                     📝 리뷰 내용
                   </Typography>
-                  <Typography variant="body2" sx={{ mb: 1, maxHeight: 100, overflow: "hidden" }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ mb: 1, maxHeight: 100, overflow: "hidden" }}
+                  >
                     {item.text?.substring(0, 200)}
                     {item.text?.length > 200 && "..."}
                   </Typography>
@@ -381,8 +382,11 @@ const SmartAnalysisPage: React.FC = () => {
                   </Typography>
                   <br />
                   <Typography variant="caption" color="textSecondary">
-                    😊 감정: {item.overall_sentiment || "N/A"}
-                    ({item.overall_confidence ? (item.overall_confidence * 100).toFixed(1) + "%" : "N/A"})
+                    😊 감정: {item.overall_sentiment || "N/A"}(
+                    {item.overall_confidence
+                      ? (item.overall_confidence * 100).toFixed(1) + "%"
+                      : "N/A"}
+                    )
                   </Typography>
                 </Grid>
               </Grid>
@@ -421,7 +425,9 @@ const SmartAnalysisPage: React.FC = () => {
               {vectorResults.context.map((ctx: string, index: number) => (
                 <Chip
                   key={index}
-                  label={`${ctx} (유사도: ${vectorResults.similarity_scores?.[index] || "N/A"})`}
+                  label={`${ctx} (유사도: ${
+                    vectorResults.similarity_scores?.[index] || "N/A"
+                  })`}
                   variant="outlined"
                   sx={{ mr: 1, mb: 1 }}
                 />
@@ -479,7 +485,8 @@ const SmartAnalysisPage: React.FC = () => {
               </Typography>
               {selectedCollections.length > 0 && (
                 <Alert severity="info" sx={{ mb: 2 }}>
-                  선택된 컬렉션: {selectedCollections.map((collection, index) => (
+                  선택된 컬렉션:{" "}
+                  {selectedCollections.map((collection, index) => (
                     <Chip
                       key={collection}
                       label={collection}
@@ -563,184 +570,222 @@ const SmartAnalysisPage: React.FC = () => {
 
           {/* 결과 */}
           {result && (
-  <Fade in>
-    <Card>
-      <CardContent>
-        <Typography variant="h6" gutterBottom>
-          분석 결과
-        </Typography>
-
-{/* ✅ 디버깅 JSON */}
-<Box
-  sx={{
-    mb: 2,
-    p: 2,
-    bgcolor: "#1e1e1e",
-    borderRadius: 2,
-    color: "#dcdcdc",
-  }}
->
-  <Box
-    sx={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      mb: 1,
-    }}
-  >
-    <Typography variant="subtitle2" sx={{ color: "#00e5ff" }}>
-      [DEBUG] Raw Result JSON
-    </Typography>
-
-    <Box sx={{ display: "flex", gap: 1, flexShrink: 0 }}>
-      <Button
-        variant="contained"
-        color="primary"
-        startIcon={<ContentCopy />}
-        onClick={copyToClipboard}
-        sx={{ minWidth: 100 }}
-      >
-        복사
-      </Button>
-      <Button
-        variant="contained"
-        color="secondary"
-        startIcon={<Share />}
-        onClick={handleShareAnalysis}
-        sx={{ minWidth: 100 }}
-      >
-        공유
-      </Button>
-      <Button
-        variant="outlined"
-        color="inherit"
-        startIcon={<Download />}
-        onClick={() => {
-          const blob = new Blob([JSON.stringify(result, null, 2)], {
-            type: "application/json",
-          });
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement("a");
-          link.href = url;
-          link.setAttribute("download", "analysis_result.json");
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-        }}
-        sx={{ minWidth: 120 }}
-      >
-        JSON
-      </Button>
-      <Button
-        variant="outlined"
-        color="success"
-        startIcon={<Download />}
-        onClick={handleDownloadPDF}
-        sx={{ minWidth: 120 }}
-      >
-        PDF
-      </Button>
-    </Box>
-  </Box>
-
-  <pre
-    style={{
-      maxHeight: 200,
-      overflow: "auto",
-      fontSize: "12px",
-      margin: 0,
-      fontFamily: "monospace",
-      color: "#dcdcdc",
-      background: "transparent",
-    }}
-  >
-    {JSON.stringify(result, null, 2)}
-  </pre>
-</Box>
-
-
-
-        {/* 📌 요약 답변 */}
-        {result.answer && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            <strong>📌 요약 답변:</strong> {result.answer}
-          </Alert>
-        )}
-
-        {/* 🔍 인사이트 */}
-        {result.insights && (
-          <Alert severity="info" sx={{ mb: 2, whiteSpace: "pre-line" }}>
-            <strong>🔍 인사이트:</strong>
-            <br />
-            {result.insights}
-          </Alert>
-        )}
-
-        {/* 💡 추천 */}
-        {result.recommendations && (
-          <Alert severity="warning" sx={{ mb: 2, whiteSpace: "pre-line" }}>
-            <strong>💡 추천:</strong>
-            <br />
-            {Array.isArray(result.recommendations)
-              ? result.recommendations.join("\n")
-              : result.recommendations}
-          </Alert>
-        )}
-
-        {/* 📂 데이터 클래스 */}
-        {renderDataClasses(result.data_classes)}
-
-        {/* 📈 기초 통계 */}
-        {renderStatistics(result.statistics)}
-
-        {/* 🔗 상관관계 히트맵 */}
-        {renderCorrelationHeatmap(result.correlations)}
-
-        {/* 🌀 비선형 패턴 */}
-        {result.nonlinear_patterns && (
-          <Alert severity="info" sx={{ mb: 2, whiteSpace: "pre-line" }}>
-            <strong>🌀 비선형 패턴:</strong>
-            <br />
-            {result.nonlinear_patterns}
-          </Alert>
-        )}
-
-        {/* 📊 MongoDB 결과 */}
-        {renderMongoTable(result.mongodb_results?.data)}
-
-        {/* 📂 Vector 검색 결과 */}
-        {result.vector_results && (
-          <Alert severity="info" sx={{ mb: 2 }}>
-            <strong>📂 Vector 검색 결과:</strong>
-            <pre style={{ fontSize: "12px" }}>
-              {JSON.stringify(result.vector_results, null, 2)}
-            </pre>
-          </Alert>
-        )}
-
-        {/* 📈 시각화 */}
-        {result.visualizations?.length > 0 && (
-          <Box sx={{ mt: 3 }}>
-            <Typography variant="h6" gutterBottom>
-              📈 시각화 결과
-            </Typography>
-            {result.visualizations.map((viz: any, idx: number) => (
-              <Card key={idx} sx={{ mb: 2 }}>
+            <Fade in>
+              <Card>
                 <CardContent>
-                  <VegaEmbed
-                    spec={{ ...viz, width: 600, height: 400 }}
-                    options={{ actions: false }}
-                  />
+                  <Typography variant="h6" gutterBottom>
+                    분석 결과
+                  </Typography>
+
+                  {/* ✅ 디버깅 JSON */}
+                  <Box
+                    sx={{
+                      mb: 2,
+                      p: 2,
+                      bgcolor: "#1e1e1e",
+                      borderRadius: 2,
+                      color: "#dcdcdc",
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        mb: 1,
+                      }}
+                    >
+                      <Typography variant="subtitle2" sx={{ color: "#00e5ff" }}>
+                        [DEBUG] Raw Result JSON
+                      </Typography>
+
+                      <Box sx={{ display: "flex", gap: 1, flexShrink: 0 }}>
+                        <Button
+                          variant="contained"
+                          color="primary"
+                          startIcon={<ContentCopy />}
+                          onClick={copyToClipboard}
+                          sx={{ minWidth: 100 }}
+                        >
+                          복사
+                        </Button>
+                        <Button
+                          variant="contained"
+                          color="secondary"
+                          startIcon={<Share />}
+                          onClick={handleShareAnalysis}
+                          sx={{ minWidth: 100 }}
+                        >
+                          공유
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="inherit"
+                          startIcon={<Download />}
+                          onClick={() => {
+                            const blob = new Blob(
+                              [JSON.stringify(result, null, 2)],
+                              {
+                                type: "application/json",
+                              }
+                            );
+                            const url = window.URL.createObjectURL(blob);
+                            const link = document.createElement("a");
+                            link.href = url;
+                            link.setAttribute(
+                              "download",
+                              "analysis_result.json"
+                            );
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                          }}
+                          sx={{ minWidth: 120 }}
+                        >
+                          JSON
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          color="success"
+                          startIcon={<Download />}
+                          onClick={handleDownloadPDF}
+                          sx={{ minWidth: 120 }}
+                        >
+                          PDF
+                        </Button>
+                      </Box>
+                    </Box>
+
+                    <pre
+                      style={{
+                        maxHeight: 200,
+                        overflow: "auto",
+                        fontSize: "12px",
+                        margin: 0,
+                        fontFamily: "monospace",
+                        color: "#dcdcdc",
+                        background: "transparent",
+                      }}
+                    >
+                      {JSON.stringify(result, null, 2)}
+                    </pre>
+                  </Box>
+
+                  {/* 📌 요약 답변 */}
+                  {result.answer && (
+                    <Alert severity="success" sx={{ mb: 2 }}>
+                      <strong>📌 요약 답변:</strong> {result.answer}
+                    </Alert>
+                  )}
+
+                  {/* 🔍 인사이트 */}
+                  {result.insights && (
+                    <Alert
+                      severity="info"
+                      sx={{ mb: 2, whiteSpace: "pre-line" }}
+                    >
+                      <strong>🔍 인사이트:</strong>
+                      <br />
+                      {result.insights}
+                    </Alert>
+                  )}
+
+                  {/* 💡 추천 */}
+                  {result.recommendations && (
+                    <Alert
+                      severity="warning"
+                      sx={{ mb: 2, whiteSpace: "pre-line" }}
+                    >
+                      <strong>💡 추천:</strong>
+                      <br />
+                      {Array.isArray(result.recommendations)
+                        ? result.recommendations.join("\n")
+                        : result.recommendations}
+                    </Alert>
+                  )}
+
+                  {/* 📜 실행된 MongoDB 쿼리 */}
+                  {result?.mongodb_results?.pipeline && (
+                    <Card sx={{ mb: 2 }}>
+                      <CardContent>
+                        <Typography variant="h6" gutterBottom>
+                          📜 실행된 MongoDB Pipeline
+                        </Typography>
+                        <pre
+                          style={{
+                            maxHeight: 200,
+                            overflow: "auto",
+                            fontSize: "12px",
+                            background: "#f7f7f7",
+                            padding: "8px",
+                          }}
+                        >
+                          {JSON.stringify(
+                            result.mongodb_results.pipeline,
+                            null,
+                            2
+                          )}
+                        </pre>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* 📂 데이터 클래스 */}
+                  {renderDataClasses(result.data_classes)}
+
+                  {/* 📈 기초 통계 */}
+                  {renderStatistics(result.statistics)}
+
+                  {/* 🔗 상관관계 히트맵 */}
+                  {renderCorrelationHeatmap(result.correlations)}
+
+                  {/* 🌀 비선형 패턴 */}
+                  {result.nonlinear_patterns && (
+                    <Alert
+                      severity="info"
+                      sx={{ mb: 2, whiteSpace: "pre-line" }}
+                    >
+                      <strong>🌀 비선형 패턴:</strong>
+                      <br />
+                      {result.nonlinear_patterns}
+                    </Alert>
+                  )}
+
+                  {/* 📊 MongoDB 결과 */}
+                  {renderMongoTable(result.mongodb_results?.data)}
+
+                  {/* 📂 Vector 검색 결과 */}
+                  {result.vector_results && (
+                    <Alert severity="info" sx={{ mb: 2 }}>
+                      <strong>📂 Vector 검색 결과:</strong>
+                      <pre style={{ fontSize: "12px" }}>
+                        {JSON.stringify(result.vector_results, null, 2)}
+                      </pre>
+                    </Alert>
+                  )}
+
+                  {/* 📈 시각화 */}
+                  {result.visualizations?.length > 0 && (
+                    <Box sx={{ mt: 3 }}>
+                      <Typography variant="h6" gutterBottom>
+                        📈 시각화 결과
+                      </Typography>
+                      {result.visualizations.map((viz: any, idx: number) => (
+                        <Card key={idx} sx={{ mb: 2 }}>
+                          <CardContent>
+                            <VegaEmbed
+                              spec={{ ...viz, width: 600, height: 400 }}
+                              options={{ actions: false }}
+                            />
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </Box>
+                  )}
                 </CardContent>
               </Card>
-            ))}
-          </Box>
-        )}
-      </CardContent>
-    </Card>
-  </Fade>
-)}
-
+            </Fade>
+          )}
         </Grid>
 
         {/* 컬렉션 선택 패널 */}
