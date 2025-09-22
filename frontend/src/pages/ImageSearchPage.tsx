@@ -41,7 +41,7 @@ import {
   Clear,
 } from '@mui/icons-material';
 import { useAuth } from '../contexts/AuthContext';
-import { searchImages, searchImagesByFile, ImageResult as APIImageResult, SearchResult as APISearchResult } from '../services/imageSearch';
+import { searchImages, searchImagesByFile, searchImagesByFileAdvanced, ImageResult as APIImageResult, SearchResult as APISearchResult } from '../services/imageSearch';
 import AnalysisCard from '../components/ai-fashion/AnalysisCard';
 import ImageDetailModal from '../components/ai-fashion/ImageDetailModal';
 
@@ -90,6 +90,7 @@ const ImageSearchPage: React.FC = () => {
   const [uploadedImagePreview, setUploadedImagePreview] = useState<string | null>(null);
   const [searchMode, setSearchMode] = useState<'text' | 'image'>('text');
   const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
   const [modalImage, setModalImage] = useState<ImageResult | null>(null);
 
   // 추천 검색어 예시
@@ -160,8 +161,12 @@ const ImageSearchPage: React.FC = () => {
         localStorage.setItem('recentImageSearches', JSON.stringify(updatedSearches));
         setQuery('');
       } else {
-        // 이미지 검색
-        searchResult = await searchImagesByFile(uploadedImage!);
+        // 이미지 검색 (기본 또는 고급)
+        if (isAdvancedSearch) {
+          searchResult = await searchImagesByFileAdvanced(uploadedImage!, 9);
+        } else {
+          searchResult = await searchImagesByFile(uploadedImage!, 9);
+        }
 
         // 최근 검색 목록 업데이트 (이미지 이름 사용)
         const newSearch = {
@@ -401,6 +406,46 @@ const ImageSearchPage: React.FC = () => {
                 </Box>
               )}
 
+              <Box sx={{ display: 'flex', gap: 2, flexDirection: 'column' }}>
+                {/* 고급 검색 옵션 (이미지 검색 모드에서만 표시) */}
+                {searchMode === 'image' && uploadedImage && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      검색 옵션:
+                    </Typography>
+                    <Button
+                      variant={isAdvancedSearch ? "contained" : "outlined"}
+                      size="small"
+                      startIcon={<AutoAwesome />}
+                      onClick={() => setIsAdvancedSearch(!isAdvancedSearch)}
+                      sx={{ 
+                        fontSize: '0.8rem',
+                        px: 2,
+                        py: 0.5,
+                        ...(isAdvancedSearch && {
+                          bgcolor: 'primary.main',
+                          color: 'white',
+                          '&:hover': {
+                            bgcolor: 'primary.dark',
+                          }
+                        })
+                      }}
+                    >
+                      {isAdvancedSearch ? '고급 검색 ON' : '고급 검색 OFF'}
+                    </Button>
+                    {isAdvancedSearch && (
+                      <Chip 
+                        label="AI 인체분할 + 카테고리분류" 
+                        size="small" 
+                        color="primary" 
+                        variant="outlined"
+                        sx={{ fontSize: '0.7rem' }}
+                      />
+                    )}
+                  </Box>
+                )}
+                
+                {/* 검색 버튼들 */}
               <Box sx={{ display: 'flex', gap: 2 }}>
                 <Button
                   variant="contained"
@@ -413,7 +458,7 @@ const ImageSearchPage: React.FC = () => {
                   }
                   sx={{ px: 4 }}
                 >
-                  {isLoading ? '검색 중...' : '검색 시작'}
+                    {isLoading ? '검색 중...' : (isAdvancedSearch ? '고급 검색 시작' : '검색 시작')}
                 </Button>
                 <Button
                   variant="outlined"
@@ -423,6 +468,7 @@ const ImageSearchPage: React.FC = () => {
                 >
                   초기화
                 </Button>
+                </Box>
               </Box>
             </CardContent>
           </Card>
@@ -525,6 +571,24 @@ const ImageSearchPage: React.FC = () => {
                           <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1, lineHeight: 1.2 }}>
                             {image.product_name || image.title}
                           </Typography>
+                          
+                          {/* 고급 검색 결과 - 카테고리 정보 표시 */}
+                          {image.clothing_category && (
+                            <Box sx={{ display: 'flex', gap: 0.5, mb: 1, alignItems: 'center' }}>
+                              <Chip 
+                                label={`${image.clothing_category}`}
+                                size="small"
+                                color="primary"
+                                variant="outlined"
+                                sx={{ fontSize: '0.7rem', height: 20 }}
+                              />
+                              {image.category_confidence && (
+                                <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.65rem' }}>
+                                  ({Math.round(image.category_confidence * 100)}%)
+                                </Typography>
+                              )}
+                            </Box>
+                          )}
                           
                           {/* 기본 정보 - 한 줄로 정리 */}
                           <Box sx={{ display: 'flex', gap: 0.5, mb: 1, flexWrap: 'wrap' }}>

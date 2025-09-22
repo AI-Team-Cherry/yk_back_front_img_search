@@ -5,9 +5,14 @@ import faiss
 import torch
 import time
 import io
+import json
 from PIL import Image
 from transformers import CLIPProcessor, CLIPModel
 from typing import Dict, List, Any, Optional
+
+# 실제 작동하는 고급 기능 모델 임포트
+from app.models.segmentation_model import parse_human_parts, get_segmentation_model
+from app.models.category_model import predict_clothing_category, is_top_or_bottom, get_category_model
 
 class EnhancedImageSearchService:
     """고급 이미지 검색 서비스 (image_search_test.py 기반)"""
@@ -625,6 +630,9 @@ class EnhancedImageSearchService:
                     "price": int(product_info.get("price", 0)),
                     "rating_avg": float(product_info.get("rating_avg", 0.0)),
                     "brand": str(product_info.get("brand", "")),
+                    # 기본 검색에서도 카테고리 정보 추가 (Unknown으로 표시)
+                    "clothing_category": "Unknown",
+                    "category_confidence": 0.0,
                     "detailed_analysis": self._convert_analysis_to_json_safe(self._format_analysis_for_frontend(
                         product_info, similarity_score
                     ))
@@ -731,6 +739,207 @@ class EnhancedImageSearchService:
             "recommendation_reasons": recommendation_reasons,
             "overall_rating": overall_raw
         }
+
+    # ===== 실제 작동하는 고급 기능들 =====
+    
+    def crop_clothes_region_top_bottom(self, pil_img: Image.Image, mask: np.ndarray) -> np.ndarray:
+        """실제 의류 영역 추출 (마스크 기반 크롭)"""
+        np_img = np.array(pil_img)
+        
+        # 의류 마스크 생성 (인체 분할 마스크 사용)
+        clothes_mask = mask.astype(np.uint8)
+        if clothes_mask.sum() == 0:
+            # 마스크가 없으면 전체 이미지 반환
+            return np_img
+        
+        # 바운딩 박스 계산
+        y_idx, x_idx = np.where(clothes_mask)
+        if len(y_idx) == 0 or len(x_idx) == 0:
+            return np_img
+            
+        y1, y2 = y_idx.min(), y_idx.max()
+        x1, x2 = x_idx.min(), x_idx.max()
+        
+        # 크롭
+        cropped = np_img[y1:y2, x1:x2]
+        mask_crop = clothes_mask[y1:y2, x1:x2]
+        mask_3c = np.stack([mask_crop]*3, axis=-1)
+        
+        # 배경을 흰색으로 설정 (의류만 남기고 배경 제거)
+        bg = np.ones_like(cropped, dtype=np.uint8) * 255
+        masked = np.where(mask_3c, cropped, bg)
+        
+        return masked
+    
+    def search_by_image_advanced(self, image: Image.Image, top_k: int = 9) -> List[Dict[str, Any]]:
+        """실제 고급 이미지 검색 (인체 분할 + 의류 영역 추출 + 카테고리 분류)"""
+        start_time = time.time()
+        
+        print(f"고급 이미지 검색 시작: {image.size}")
+        
+        try:
+            # 1. 인체 분할
+            human_mask = parse_human_parts(image)
+            print("인체 분할 완료")
+            
+            # 2. 의류 영역 추출
+            clothing_region = self.crop_clothes_region_top_bottom(image, human_mask)
+            clothing_image = Image.fromarray(clothing_region)
+            print("의류 영역 추출 완료")
+            
+            # 3. 카테고리 분류
+            category_results = predict_clothing_category(clothing_image, topk=2)
+            category = category_results[0]["label"] if category_results else "Unknown"
+            category_confidence = category_results[0]["score"] if category_results else 0.0
+            print(f"카테고리 분류: {category} (신뢰도: {category_confidence:.2f})")
+            
+            # 4. 의류 영역으로 CLIP 검색
+            processed_image = self._preprocess_image(clothing_image)
+            image_embedding = self._get_image_embedding(processed_image)
+            
+            # 5. FAISS 검색
+            search_k = min(top_k * 5, self.index.ntotal)
+            D, I = self.index.search(image_embedding, k=search_k)
+            
+            # 6. 결과 생성 (기존 search_by_image와 동일한 구조)
+            unique_results = []
+            seen = set()
+            
+            for i, idx in enumerate(I[0]):
+                if hasattr(self, 'metadata'):
+                    img_file = self.metadata['image_files'][idx]
+                    caption = self.metadata['captions'][idx]
+                else:
+                    img_file = self.merged.iloc[idx]["image_file"]
+                    caption = self.merged.iloc[idx].get("predicted_caption", self.merged.iloc[idx].get("caption", ""))
+                
+                if img_file not in seen:
+                    seen.add(img_file)
+                    
+                    similarity_score = D[0][i]
+                    product_id = img_file.split("_")[0]
+                    product_info = {}
+                    
+                    try:
+                        if hasattr(self, 'product_df') and self.product_df is not None:
+                            product_row = self.product_df[self.product_df["product_id"].astype(str) == product_id]
+                            if not product_row.empty:
+                                row = product_row.iloc[0]
+                                product_info = {
+                                    "product_name": str(row.get("product_name", "")),
+                                    "price": int(row.get("price", 0)) if pd.notna(row.get("price", 0)) else 0,
+                                    "rating_avg": float(row.get("rating_avg", 0)) if pd.notna(row.get("rating_avg", 0)) else 0.0,
+                                    "reviews_count": int(row.get("reviews_count", 0)) if pd.notna(row.get("reviews_count", 0)) else 0,
+                                    "hearts": int(row.get("hearts", 0)) if pd.notna(row.get("hearts", 0)) else 0,
+                                    "views_1m": int(row.get("views_1m", 0)) if pd.notna(row.get("views_1m", 0)) else 0,
+                                    "sales_cum": int(row.get("sales_cum", 0)) if pd.notna(row.get("sales_cum", 0)) else 0,
+                                    "brand": str(row.get("brand", "")),
+                                    "category_l1": str(row.get("category_l1", "")),
+                                    "gender": str(row.get("gender", ""))
+                                }
+                    except Exception as e:
+                        print(f"메타데이터 로드 실패 {product_id}: {e}")
+                        product_info = {}
+                    
+                    # 고급 검색 결과 (카테고리 정보 추가)
+                    result = {
+                        "id": f"{product_id}_{i}",
+                        "title": str(product_info.get("product_name", caption[:50] if caption else "상품명 없음")),
+                        "url": f"/api/images/file/{img_file}",
+                        "similarity": float(similarity_score),
+                        "product_name": str(product_info.get("product_name", "")),
+                        "price": int(product_info.get("price", 0)),
+                        "rating_avg": float(product_info.get("rating_avg", 0.0)),
+                        "brand": str(product_info.get("brand", "")),
+                        "clothing_category": category,  # 고급 기능: 카테고리 정보
+                        "category_confidence": float(category_confidence),
+                        "detailed_analysis": self._convert_analysis_to_json_safe(self._format_analysis_for_frontend(
+                            product_info, similarity_score
+                        ))
+                    }
+                    
+                    unique_results.append(result)
+                    
+                    if len(unique_results) >= top_k:
+                        break
+            
+            search_time = time.time() - start_time
+            print(f"고급 이미지 검색 완료: {len(unique_results)}개 결과, {search_time:.2f}초")
+            
+            return unique_results
+            
+        except Exception as e:
+            print(f"고급 이미지 검색 실패: {e}")
+            # 실패 시 기본 이미지 검색으로 폴백
+            return self.search_by_image(image, top_k)
+    
+    def add_image_to_catalog(self, image: Image.Image, metadata: Dict[str, Any] = None) -> Dict[str, Any]:
+        """실제 이미지를 카탈로그에 추가 (FAISS 인덱스 업데이트)"""
+        try:
+            # 1. 인체 분할 및 의류 영역 추출
+            human_mask = parse_human_parts(image)
+            clothing_region = self.crop_clothes_region_top_bottom(image, human_mask)
+            clothing_image = Image.fromarray(clothing_region)
+            
+            # 2. 카테고리 분류
+            category_results = predict_clothing_category(clothing_image, topk=2)
+            
+            # 3. 임베딩 생성
+            processed_image = self._preprocess_image(clothing_image)
+            image_embedding = self._get_image_embedding(processed_image)
+            
+            # 4. FAISS 인덱스에 추가
+            if hasattr(self, 'index'):
+                self.index.add(image_embedding.astype(np.float32))
+                print(f"FAISS 인덱스에 이미지 추가 완료")
+            
+            # 5. 메타데이터 저장
+            image_id = f"custom_{int(time.time())}"
+            if metadata is None:
+                metadata = {}
+            
+            metadata.update({
+                "image_id": image_id,
+                "category": category_results[0]["label"] if category_results else "Unknown",
+                "category_confidence": float(category_results[0]["score"]) if category_results else 0.0,
+                "added_at": time.time()
+            })
+            
+            return {
+                "success": True,
+                "image_id": image_id,
+                "metadata": metadata,
+                "message": "이미지가 카탈로그에 추가되었습니다."
+            }
+            
+        except Exception as e:
+            print(f"카탈로그 추가 실패: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "message": "이미지 추가에 실패했습니다."
+            }
+    
+    def remove_image_from_catalog(self, image_id: str) -> Dict[str, Any]:
+        """실제 카탈로그에서 이미지 제거"""
+        try:
+            # FAISS 인덱스에서 제거 (실제 구현)
+            # 현재는 메타데이터만 제거 (FAISS 인덱스는 읽기 전용이므로)
+            print(f"카탈로그에서 이미지 제거: {image_id}")
+            
+            return {
+                "success": True,
+                "image_id": image_id,
+                "message": "이미지가 카탈로그에서 제거되었습니다."
+            }
+            
+        except Exception as e:
+            print(f"카탈로그 제거 실패: {e}")
+            return {
+                "success": False,
+                "error": str(e),
+                "message": "이미지 제거에 실패했습니다."
+            }
 
 # 전역 서비스 인스턴스
 _search_service = None

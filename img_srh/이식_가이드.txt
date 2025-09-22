@@ -1,0 +1,153 @@
+========================================
+이미지 검색 시스템 이식 가이드
+========================================
+
+📁 폴더 구조:
+img_srh/
+├── __init__.py
+├── main.py                 # 메인 애플리케이션
+├── run.py                  # 실행 스크립트
+├── requirements.txt        # 의존성 목록
+├── 이식_가이드.txt         # 이 파일
+├── routes/                 # API 라우트
+│   ├── __init__.py
+│   ├── image_search.py     # 텍스트 기반 이미지 검색
+│   └── photo_search.py     # 이미지 업로드 기반 검색
+├── services/               # 비즈니스 로직
+│   ├── __init__.py
+│   └── image_gen.py        # AI 이미지 생성/검색 서비스
+├── models/                 # AI 모델
+│   ├── __init__.py
+│   ├── segmentation_model.py  # 인체 분할 모델
+│   └── category_model.py      # 의류 카테고리 분류 모델
+├── utils/                  # 유틸리티
+│   ├── __init__.py
+│   └── translate.py        # 한국어-영어 번역
+└── data/                   # 데이터 파일
+    ├── images/             # 이미지 파일들
+    ├── *.csv              # 임베딩 데이터
+    ├── *.json             # 메타데이터
+    ├── *.npy              # ID 매핑
+    └── *.index            # FAISS 인덱스
+
+========================================
+🚀 설치 및 실행 방법
+========================================
+
+1. 의존성 설치:
+   pip install -r requirements.txt
+
+2. 실행:
+   python run.py
+   또는
+   python main.py
+
+3. API 문서 확인:
+   http://localhost:8000/docs
+
+========================================
+🔧 주요 API 엔드포인트
+========================================
+
+텍스트 기반 이미지 검색:
+- GET /api/images/search?q={query}&limit={limit}
+- GET /api/images/list?query={query}&limit={limit}
+- GET /api/images/file/{filename}
+- GET /api/images/download/{filename}
+
+이미지 업로드 기반 검색:
+- POST /search?topk={topk}
+- POST /catalog/add?item_id={id}
+- POST /meta/upsert
+- DELETE /catalog/delete?item_id={id}
+
+========================================
+📋 다른 프로젝트에 이식하는 방법
+========================================
+
+1. 폴더 복사:
+   - img_srh 폴더 전체를 새 프로젝트에 복사
+
+2. 의존성 설치:
+   - 새 프로젝트에서 pip install -r img_srh/requirements.txt
+
+3. 임포트 수정:
+   - 기존 프로젝트의 main.py에서 img_srh 모듈을 임포트
+   - 예: from img_srh.routes.image_search import router as image_search_router
+
+4. 라우터 등록:
+   - app.include_router(image_search_router, prefix="/api/images")
+
+5. 데이터 경로 확인:
+   - data/images/ 폴더에 이미지 파일들이 있는지 확인
+   - CSV 파일들이 올바른 위치에 있는지 확인
+
+========================================
+⚠️ 주의사항
+========================================
+
+1. AI 모델 다운로드:
+   - 첫 실행 시 CLIP, Fashion-CLIP, M2M100 모델이 자동 다운로드됨
+   - 인터넷 연결 필요
+   - 모델 크기가 크므로 시간이 걸릴 수 있음
+
+2. GPU 사용:
+   - CUDA가 설치된 환경에서는 자동으로 GPU 사용
+   - CPU만 사용하려면 코드에서 device 설정 변경
+
+3. 데이터 파일:
+   - CSV 파일들이 없으면 일부 기능이 작동하지 않을 수 있음
+   - 이미지 파일들이 data/images/ 폴더에 있어야 함
+
+4. 메모리 사용량:
+   - AI 모델들이 메모리를 많이 사용함
+   - 최소 4GB RAM 권장
+
+========================================
+🛠️ 커스터마이징
+========================================
+
+1. 이미지 디렉토리 변경:
+   - routes/image_search.py의 IMAGES_DIR 경로 수정
+
+2. 모델 변경:
+   - models/ 폴더의 모델 파일들 수정
+   - services/image_gen.py의 모델 설정 변경
+
+3. 번역 규칙 추가:
+   - utils/translate.py의 KO2EN_RULES 딕셔너리에 추가
+
+4. API 응답 형식 변경:
+   - routes/ 폴더의 각 라우트 파일에서 응답 구조 수정
+
+========================================
+🔍 문제 해결
+========================================
+
+1. 모델 로딩 실패:
+   - 인터넷 연결 확인
+   - transformers 라이브러리 버전 확인
+
+2. 이미지 파일을 찾을 수 없음:
+   - data/images/ 폴더 경로 확인
+   - 파일 권한 확인
+
+3. FAISS 인덱스 오류:
+   - data/ 폴더의 .index, .npy 파일들 확인
+   - CSV 파일들이 올바른 형식인지 확인
+
+4. 메모리 부족:
+   - 배치 크기 줄이기
+   - 모델을 CPU로 강제 실행
+
+========================================
+📞 지원
+========================================
+
+문제가 발생하면 다음을 확인하세요:
+1. 로그 메시지 확인
+2. API 문서 (http://localhost:8000/docs) 참조
+3. 데이터 파일들이 올바른 위치에 있는지 확인
+4. 의존성 버전 호환성 확인
+
+========================================

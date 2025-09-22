@@ -6,7 +6,7 @@ from pathlib import Path
 import os
 import io
 
-from app.services.image_gen import generate_image, EnhancedImageSearchService
+from app.services.image_gen import generate_image, EnhancedImageSearchService, get_search_service
 from app.services.gemini_service import gemini_service
 from app.utils.translate import translate_fashion_query_ko2en  # 한국어 쿼리 번역 유틸
 
@@ -235,6 +235,9 @@ async def search_images_by_file(file: UploadFile = File(...), limit: int = 9):
                 "price": int(result.get("price", 0)),
                 "rating_avg": float(result.get("rating_avg", 0.0)),
                 "brand": str(result.get("brand", "")),
+                # 기본 검색에서도 카테고리 정보 추가 (고급 검색과 동일한 구조)
+                "clothing_category": str(result.get("clothing_category", "Unknown")),
+                "category_confidence": float(result.get("category_confidence", 0.0)),
                 "detailed_analysis": service._convert_analysis_to_json_safe(result.get("detailed_analysis", {}))
             })
         
@@ -250,6 +253,161 @@ async def search_images_by_file(file: UploadFile = File(...), limit: int = 9):
     except Exception as e:
         print(f"이미지 검색 실패: {e}")
         raise HTTPException(status_code=500, detail=f"이미지 검색 실패: {str(e)}")
+
+
+
+@router.post("/search-by-image-advanced")
+async def search_images_by_file_advanced(file: UploadFile = File(...), limit: int = 9):
+    """실제 고급 이미지 검색 API (인체 분할 + 의류 영역 추출 + 카테고리 분류)"""
+    try:
+        limit = _clamp_limit(limit)
+        
+        # 이미지 파일 검증
+        if not file.content_type or not file.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail="이미지 파일만 업로드할 수 있습니다.")
+        
+        # 파일 크기 제한 (10MB)
+        if file.size and file.size > 10 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="파일 크기는 10MB를 초과할 수 없습니다.")
+        
+        print(f"[AdvancedImageSearch] Uploaded file: {file.filename} | Size: {file.size} bytes")
+        
+        # 이미지 파일을 PIL Image로 변환
+        from PIL import Image
+        
+        # 파일 포인터를 처음으로 이동
+        await file.seek(0)
+        image_data = await file.read()
+        
+        # 이미지 데이터 검증
+        if not image_data:
+            raise HTTPException(status_code=400, detail="이미지 파일이 비어있습니다.")
+        
+        image = Image.open(io.BytesIO(image_data))
+        
+        # 이미지 형식 검증
+        if image.format not in ['JPEG', 'PNG', 'WEBP']:
+            raise HTTPException(status_code=400, detail="지원하지 않는 이미지 형식입니다. JPEG, PNG, WEBP만 지원됩니다.")
+        
+        # 실제 고급 이미지 검색 수행
+        service = get_search_service()
+        search_results = service.search_by_image_advanced(image, limit)
+        
+        # 텍스트 검색과 동일한 응답 구조로 변환
+        formatted_images = []
+        for result in search_results:
+            formatted_images.append({
+                "id": str(result.get("id", "")),
+                "filename": str(result.get("title", "")),  # title을 filename으로 사용
+                "url": str(result.get("url", "")),
+                "title": str(result.get("title", "")),
+                "description": f"고급 AI 이미지 검색 결과",
+                "tags": ["고급검색", "인체분할", "카테고리분류"],
+                "relevance": float(result.get("similarity", 0.0)),
+                # 텍스트 검색과 동일한 구조
+                "similarity": float(result.get("similarity", 0.0)),
+                "product_name": str(result.get("product_name", "")),
+                "price": int(result.get("price", 0)),
+                "rating_avg": float(result.get("rating_avg", 0.0)),
+                "brand": str(result.get("brand", "")),
+                # 고급 기능 추가 정보
+                "clothing_category": str(result.get("clothing_category", "")),
+                "category_confidence": float(result.get("category_confidence", 0.0)),
+                "detailed_analysis": service._convert_analysis_to_json_safe(result.get("detailed_analysis", {}))
+            })
+        
+        return {
+            "query": f"고급 이미지 검색: {file.filename}",
+            "totalCount": len(formatted_images),
+            "searchTime": 0.0,
+            "images": formatted_images
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"고급 이미지 검색 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"고급 이미지 검색 실패: {str(e)}")
+
+@router.post("/catalog/add")
+async def add_image_to_catalog(
+    file: UploadFile = File(...),
+    brand: Optional[str] = None,
+    title: Optional[str] = None,
+    price: Optional[float] = None,
+    url: Optional[str] = None
+):
+    """실제 이미지를 카탈로그에 추가"""
+    try:
+        # 이미지 파일 검증
+        if not file.content_type or not file.content_type.startswith('image/'):
+            raise HTTPException(status_code=400, detail="이미지 파일만 업로드할 수 있습니다.")
+        
+        # 파일 크기 제한 (10MB)
+        if file.size and file.size > 10 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="파일 크기는 10MB를 초과할 수 없습니다.")
+        
+        print(f"[CatalogAdd] Adding image: {file.filename}")
+        
+        # 이미지 파일을 PIL Image로 변환
+        from PIL import Image
+        
+        await file.seek(0)
+        image_data = await file.read()
+        
+        if not image_data:
+            raise HTTPException(status_code=400, detail="이미지 파일이 비어있습니다.")
+        
+        image = Image.open(io.BytesIO(image_data))
+        
+        # 이미지 형식 검증
+        if image.format not in ['JPEG', 'PNG', 'WEBP']:
+            raise HTTPException(status_code=400, detail="지원하지 않는 이미지 형식입니다. JPEG, PNG, WEBP만 지원됩니다.")
+        
+        # 메타데이터 준비
+        metadata = {
+            "brand": brand,
+            "title": title,
+            "price": price,
+            "url": url,
+            "filename": file.filename
+        }
+        
+        # 실제 카탈로그에 추가
+        service = get_search_service()
+        result = service.add_image_to_catalog(image, metadata)
+        
+        if result["success"]:
+            return result
+        else:
+            raise HTTPException(status_code=500, detail=result["message"])
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"카탈로그 추가 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"카탈로그 추가 실패: {str(e)}")
+
+@router.delete("/catalog/delete/{image_id}")
+async def delete_image_from_catalog(image_id: str):
+    """실제 카탈로그에서 이미지 제거"""
+    try:
+        print(f"[CatalogDelete] Removing image: {image_id}")
+        
+        # 실제 카탈로그에서 제거
+        service = get_search_service()
+        result = service.remove_image_from_catalog(image_id)
+        
+        if result["success"]:
+            return result
+        else:
+            raise HTTPException(status_code=500, detail=result["message"])
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"카탈로그 제거 실패: {e}")
+        raise HTTPException(status_code=500, detail=f"카탈로그 제거 실패: {str(e)}")
 
 
 @router.post("/compose-fashion")

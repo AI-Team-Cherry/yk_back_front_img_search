@@ -77,3 +77,22 @@ coverage.xml
 
 # Data
 img_search/
+
+# YOLO Models (큰 파일들 - 깃에 올리지 않음)
+*.pt
+yolov8*.pt
+yolo11*.pt
+yolov8n-seg.pt
+yolov8s-seg.pt
+yolo11s-seg.pt
+yolo11n-seg.pt
+yolo11m-seg.pt
+yolo11l-seg.pt
+yolo11x-seg.pt
+
+# AI Models
+models/*.pt
+models/*.pth
+models/*.onnx
+models/*.bin
+models/*.safetensors
