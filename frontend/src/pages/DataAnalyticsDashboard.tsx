@@ -18,40 +18,35 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tabs,
+  Tab,
+  IconButton,
+  Tooltip,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   Switch,
   FormControlLabel,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Tabs,
-  Tab,
-  IconButton,
-  Tooltip,
 } from "@mui/material";
 import {
   Analytics,
   Send,
   Code,
   TableChart,
-  BarChart as BarChartIcon,
   ShowChart,
   DonutSmall,
-  ExpandMore,
   Download,
   Refresh,
-  Settings,
-  FilterList,
   Visibility,
+  Settings,
+  Share,
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import CollectionSelector from "../components/Collections/CollectionSelector";
 import { apiConfig } from "../utils/apiConfig";
 import {
-  BarChart,
+  BarChart as RechartsBarChart,
   Bar,
   LineChart,
   Line,
@@ -63,21 +58,8 @@ import {
   CartesianGrid,
   Tooltip as RechartsTooltip,
   Legend,
-  ResponsiveContainer
-} from 'recharts';
-
-// 차트 타입 정의
-type ChartType = 'bar' | 'line' | 'donut';
-
-interface ChartOptions {
-  title: string;
-  xField: string;
-  yField: string;
-  colorField?: string;
-  showLegend: boolean;
-  showGrid: boolean;
-  animated: boolean;
-}
+  ResponsiveContainer,
+} from "recharts";
 
 interface AnalysisResult {
   query: string;
@@ -86,11 +68,10 @@ interface AnalysisResult {
   sample_data: any[];
   csv_data: string;
   total_count: number;
-  chart_suggestion: {
-    type: ChartType;
-    x_field: string;
-    y_field: string;
-    title: string;
+  visualizations?: any[];
+  ai_analysis?: {
+    statistics?: any;
+    correlations?: any;
   };
 }
 
@@ -102,21 +83,14 @@ const DataAnalyticsDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [selectedCollections, setSelectedCollections] = useState<string[]>([]);
-
-  // 차트 설정
-  const [selectedChartType, setSelectedChartType] = useState<ChartType>('bar');
-  const [chartOptions, setChartOptions] = useState<ChartOptions>({
-    title: '',
-    xField: '',
-    yField: '',
-    colorField: '',
-    showLegend: true,
-    showGrid: true,
-    animated: true,
-  });
-
-  // 탭 상태
   const [activeTab, setActiveTab] = useState(0);
+  const [chartOptions, setChartOptions] = useState({
+    type: 'bar',
+    showGrid: true,
+    showLegend: true,
+    dataLimit: 10,
+  });
+  const [isSharing, setIsSharing] = useState(false);
 
   const suggestedQueries = [
     "좋아요가 가장 많은 상품 상위 10개를 보여주세요",
@@ -146,7 +120,6 @@ const DataAnalyticsDashboard: React.FC = () => {
     }, 200);
 
     try {
-      // 동적으로 백엔드 URL 가져오기
       const backendUrl = await apiConfig.detectAvailableServer();
 
       const response = await fetch(
@@ -171,38 +144,7 @@ const DataAnalyticsDashboard: React.FC = () => {
       const data = await response.json();
       console.log("📊 [Colab Response]", data);
 
-      // 코랩 응답을 프론트엔드 형식으로 변환
       const mongoResults = data.mongodb_results || {};
-
-      // 차트에 적합한 필드 자동 감지
-      const detectChartFields = (dataArray: any[]) => {
-        if (!dataArray || dataArray.length === 0) return { x_field: '', y_field: '' };
-
-        const sample = dataArray[0];
-        const numericFields = [];
-        const textFields = [];
-
-        for (const [key, value] of Object.entries(sample)) {
-          if (key === '_id') continue;
-          if (typeof value === 'number') {
-            numericFields.push(key);
-          } else if (typeof value === 'string') {
-            textFields.push(key);
-          }
-        }
-
-        // 좋아요, 평점, 가격 등을 우선순위로 Y축 설정
-        const priorityYFields = ['hearts', 'rating_avg', 'price', 'sales_cum', 'views_1m', 'reviews_count'];
-        let yField = numericFields.find(field => priorityYFields.includes(field)) || numericFields[0] || 'value';
-
-        // 이름, 브랜드 등을 우선순위로 X축 설정
-        const priorityXFields = ['name', 'brand', 'category_l1', 'title'];
-        let xField = textFields.find(field => priorityXFields.includes(field)) || textFields[0] || 'name';
-
-        return { x_field: xField, y_field: yField };
-      };
-
-      const chartFields = detectChartFields(mongoResults.data);
 
       const analyticsData = {
         query: data.query,
@@ -211,28 +153,12 @@ const DataAnalyticsDashboard: React.FC = () => {
         sample_data: mongoResults.data || [],
         csv_data: convertToCsv(mongoResults.data || []),
         total_count: mongoResults.data?.length || 0,
-        chart_suggestion: {
-          type: 'bar' as ChartType,
-          x_field: chartFields.x_field,
-          y_field: chartFields.y_field,
-          title: `${data.query} 분석 결과`
-        }
+        visualizations: data.visualizations || [],
+        ai_analysis: data.ai_analysis || {},
       };
 
       setResult(analyticsData);
       setProgress(100);
-
-      // 차트 옵션 자동 설정
-      if (analyticsData.chart_suggestion) {
-        setSelectedChartType(analyticsData.chart_suggestion.type);
-        setChartOptions(prev => ({
-          ...prev,
-          title: analyticsData.chart_suggestion.title,
-          xField: analyticsData.chart_suggestion.x_field,
-          yField: analyticsData.chart_suggestion.y_field,
-        }));
-      }
-
       setQuery("");
     } catch (error: any) {
       console.error("❌ 분석 요청 오류:", error);
@@ -281,209 +207,263 @@ const DataAnalyticsDashboard: React.FC = () => {
     document.body.removeChild(link);
   };
 
-  // 차트 데이터 전처리
-  const prepareChartData = () => {
-    if (!result?.sample_data || result.sample_data.length === 0) return [];
+  const shareAnalysis = async () => {
+    if (!result || !user?.id) return;
 
-    return result.sample_data.map((item, index) => ({
-      ...item,
-      index: index + 1,
-      name: item[chartOptions.xField] || item.name || `Item ${index + 1}`,
-      value: item[chartOptions.yField] || item.value || 0
-    }));
+    setIsSharing(true);
+    try {
+      const backendUrl = await apiConfig.detectAvailableServer();
+
+      const shareData = {
+        title: result.query,
+        query: result.query,
+        mongodb_query: result.mongodb_query,
+        columns: result.columns,
+        sample_data: result.sample_data,
+        csv_data: result.csv_data,
+        total_count: result.total_count,
+        chart_options: chartOptions,
+        created_by: user.id,
+        created_at: new Date().toISOString(),
+        collections: selectedCollections
+      };
+
+      const response = await fetch(`${backendUrl}/api/shared-analysis`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify(shareData),
+      });
+
+      if (!response.ok) {
+        throw new Error(`공유 실패: ${response.status}`);
+      }
+
+      const sharedAnalysis = await response.json();
+
+      // 성공 메시지
+      setError(null);
+      alert('분석 결과가 성공적으로 공유되었습니다!');
+
+    } catch (error: any) {
+      console.error("공유 오류:", error);
+      setError(error.message || "분석 결과 공유 중 오류가 발생했습니다.");
+    } finally {
+      setIsSharing(false);
+    }
   };
 
-  // 도넛 차트용 색상 팔레트
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF7C7C'];
+  const generateChartData = () => {
+    if (!result?.sample_data || result.sample_data.length === 0) return [];
 
-  // 차트 렌더링
+    const numericColumns = result.columns.filter(col => {
+      const sampleValue = result.sample_data[0][col];
+      return typeof sampleValue === 'number' || !isNaN(Number(sampleValue));
+    });
+
+    if (numericColumns.length === 0) return [];
+
+    const limitedData = result.sample_data.slice(0, chartOptions.dataLimit);
+
+    return limitedData.map((row, index) => {
+      const chartRow: any = { name: `항목 ${index + 1}` };
+
+      numericColumns.forEach(col => {
+        const value = Number(row[col]);
+        if (!isNaN(value)) {
+          chartRow[col] = value;
+        }
+      });
+
+      // 이름 컬럼이 있으면 사용
+      const nameColumns = result.columns.filter(col =>
+        col.toLowerCase().includes('name') ||
+        col.toLowerCase().includes('title') ||
+        col.toLowerCase().includes('product')
+      );
+
+      if (nameColumns.length > 0 && row[nameColumns[0]]) {
+        chartRow.name = String(row[nameColumns[0]]).slice(0, 20);
+      }
+
+      return chartRow;
+    });
+  };
+
   const renderChart = () => {
-    const chartData = prepareChartData();
-
+    const chartData = generateChartData();
     if (chartData.length === 0) {
       return (
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
-          <Typography variant="h6" color="textSecondary">
-            차트를 표시할 데이터가 없습니다
-          </Typography>
-        </Box>
+        <Alert severity="info">
+          차트를 생성할 수 있는 숫자 데이터가 없습니다.
+        </Alert>
       );
     }
 
-    switch (selectedChartType) {
-      case 'bar':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              {chartOptions.showGrid && <CartesianGrid strokeDasharray="3 3" />}
-              <XAxis dataKey="name" />
-              <YAxis />
-              <RechartsTooltip />
-              {chartOptions.showLegend && <Legend />}
-              <Bar dataKey="value" fill="#8884d8" />
-            </BarChart>
-          </ResponsiveContainer>
-        );
+    const numericColumns = result?.columns.filter(col => {
+      const sampleValue = result.sample_data[0][col];
+      return typeof sampleValue === 'number' || !isNaN(Number(sampleValue));
+    }) || [];
 
-      case 'line':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              {chartOptions.showGrid && <CartesianGrid strokeDasharray="3 3" />}
-              <XAxis dataKey="name" />
-              <YAxis />
-              <RechartsTooltip />
-              {chartOptions.showLegend && <Legend />}
-              <Line type="monotone" dataKey="value" stroke="#8884d8" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        );
+    const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#00ff00'];
 
-      case 'donut':
-        return (
-          <ResponsiveContainer width="100%" height={400}>
-            <PieChart>
-              <Pie
-                data={chartData}
-                cx="50%"
-                cy="50%"
-                innerRadius={60}
-                outerRadius={120}
-                paddingAngle={5}
-                dataKey="value"
-              >
-                {chartData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <RechartsTooltip />
-              {chartOptions.showLegend && <Legend />}
-            </PieChart>
-          </ResponsiveContainer>
-        );
-
-      default:
-        return (
-          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
-            <Typography variant="h6" color="textSecondary">
-              지원되지 않는 차트 타입입니다
-            </Typography>
-          </Box>
-        );
+    if (chartOptions.type === 'bar') {
+      return (
+        <ResponsiveContainer width="100%" height={400}>
+          <RechartsBarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            {chartOptions.showGrid && <CartesianGrid strokeDasharray="3 3" />}
+            <XAxis dataKey="name" />
+            <YAxis />
+            <RechartsTooltip />
+            {chartOptions.showLegend && <Legend />}
+            {numericColumns.slice(0, 3).map((col, index) => (
+              <Bar key={col} dataKey={col} fill={colors[index]} />
+            ))}
+          </RechartsBarChart>
+        </ResponsiveContainer>
+      );
     }
+
+    if (chartOptions.type === 'line') {
+      return (
+        <ResponsiveContainer width="100%" height={400}>
+          <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            {chartOptions.showGrid && <CartesianGrid strokeDasharray="3 3" />}
+            <XAxis dataKey="name" />
+            <YAxis />
+            <RechartsTooltip />
+            {chartOptions.showLegend && <Legend />}
+            {numericColumns.slice(0, 3).map((col, index) => (
+              <Line key={col} type="monotone" dataKey={col} stroke={colors[index]} />
+            ))}
+          </LineChart>
+        </ResponsiveContainer>
+      );
+    }
+
+    if (chartOptions.type === 'pie') {
+      const pieData = chartData.slice(0, 5).map((item, index) => ({
+        name: item.name,
+        value: Object.values(item).find(v => typeof v === 'number') as number || 0,
+        fill: colors[index % colors.length]
+      }));
+
+      return (
+        <ResponsiveContainer width="100%" height={400}>
+          <PieChart>
+            <Pie
+              data={pieData}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={150}
+              fill="#8884d8"
+              label
+            >
+              {pieData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.fill} />
+              ))}
+            </Pie>
+            <RechartsTooltip />
+            {chartOptions.showLegend && <Legend />}
+          </PieChart>
+        </ResponsiveContainer>
+      );
+    }
+
+    return null;
   };
 
-  const renderChartTypeSelector = () => (
-    <Card sx={{ mb: 2 }}>
-      <CardContent>
-        <Typography variant="h6" gutterBottom sx={{ display: "flex", alignItems: "center" }}>
-          <BarChartIcon sx={{ mr: 1 }} />
-          차트 설정
-        </Typography>
+  const renderChartSettings = () => {
+    if (!result) return null;
 
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={4}>
-            <FormControl fullWidth>
-              <InputLabel>차트 타입</InputLabel>
-              <Select
-                value={selectedChartType}
-                onChange={(e) => setSelectedChartType(e.target.value as ChartType)}
-                label="차트 타입"
-              >
-                <MenuItem value="bar">
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <BarChartIcon sx={{ mr: 1 }} /> 막대 차트
-                  </Box>
-                </MenuItem>
-                <MenuItem value="line">
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <ShowChart sx={{ mr: 1 }} /> 선 차트
-                  </Box>
-                </MenuItem>
-                <MenuItem value="donut">
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <DonutSmall sx={{ mr: 1 }} /> 도넛 차트
-                  </Box>
-                </MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
+    return (
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+            <Settings sx={{ mr: 1 }} />
+            차트 설정
+          </Typography>
 
-          <Grid item xs={12} md={8}>
-            <Accordion>
-              <AccordionSummary expandIcon={<ExpandMore />}>
-                <Typography variant="subtitle2">
-                  <Settings sx={{ mr: 1, verticalAlign: 'middle' }} />
-                  고급 옵션
-                </Typography>
-              </AccordionSummary>
-              <AccordionDetails>
-                <Grid container spacing={2}>
-                  <Grid item xs={6}>
-                    <TextField
-                      fullWidth
-                      label="차트 제목"
-                      value={chartOptions.title}
-                      onChange={(e) => setChartOptions(prev => ({ ...prev, title: e.target.value }))}
-                      size="small"
-                    />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <TextField
-                      fullWidth
-                      label="X축 필드"
-                      value={chartOptions.xField}
-                      onChange={(e) => setChartOptions(prev => ({ ...prev, xField: e.target.value }))}
-                      size="small"
-                    />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <TextField
-                      fullWidth
-                      label="Y축 필드"
-                      value={chartOptions.yField}
-                      onChange={(e) => setChartOptions(prev => ({ ...prev, yField: e.target.value }))}
-                      size="small"
-                    />
-                  </Grid>
-                  <Grid item xs={6}>
-                    <TextField
-                      fullWidth
-                      label="색상 필드 (선택사항)"
-                      value={chartOptions.colorField}
-                      onChange={(e) => setChartOptions(prev => ({ ...prev, colorField: e.target.value }))}
-                      size="small"
-                    />
-                  </Grid>
-                  <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', gap: 2 }}>
-                      <FormControlLabel
-                        control={<Switch checked={chartOptions.showLegend} onChange={(e) => setChartOptions(prev => ({ ...prev, showLegend: e.target.checked }))} />}
-                        label="범례 표시"
-                      />
-                      <FormControlLabel
-                        control={<Switch checked={chartOptions.showGrid} onChange={(e) => setChartOptions(prev => ({ ...prev, showGrid: e.target.checked }))} />}
-                        label="격자 표시"
-                      />
-                      <FormControlLabel
-                        control={<Switch checked={chartOptions.animated} onChange={(e) => setChartOptions(prev => ({ ...prev, animated: e.target.checked }))} />}
-                        label="애니메이션"
-                      />
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>차트 유형</InputLabel>
+                <Select
+                  value={chartOptions.type}
+                  label="차트 유형"
+                  onChange={(e) => setChartOptions(prev => ({ ...prev, type: e.target.value }))}
+                >
+                  <MenuItem value="bar">
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <ShowChart sx={{ mr: 1 }} /> 막대 차트
                     </Box>
-                  </Grid>
-                </Grid>
-              </AccordionDetails>
-            </Accordion>
+                  </MenuItem>
+                  <MenuItem value="line">
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <ShowChart sx={{ mr: 1 }} /> 선 차트
+                    </Box>
+                  </MenuItem>
+                  <MenuItem value="pie">
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <DonutSmall sx={{ mr: 1 }} /> 원형 차트
+                    </Box>
+                  </MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12} sm={6}>
+              <FormControl fullWidth>
+                <InputLabel>데이터 개수</InputLabel>
+                <Select
+                  value={chartOptions.dataLimit}
+                  label="데이터 개수"
+                  onChange={(e) => setChartOptions(prev => ({ ...prev, dataLimit: Number(e.target.value) }))}
+                >
+                  <MenuItem value={5}>5개</MenuItem>
+                  <MenuItem value={10}>10개</MenuItem>
+                  <MenuItem value={20}>20개</MenuItem>
+                  <MenuItem value={50}>50개</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid item xs={12}>
+              <Box sx={{ display: 'flex', gap: 2 }}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={chartOptions.showGrid}
+                      onChange={(e) => setChartOptions(prev => ({ ...prev, showGrid: e.target.checked }))}
+                    />
+                  }
+                  label="그리드 표시"
+                />
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={chartOptions.showLegend}
+                      onChange={(e) => setChartOptions(prev => ({ ...prev, showLegend: e.target.checked }))}
+                    />
+                  }
+                  label="범례 표시"
+                />
+              </Box>
+            </Grid>
           </Grid>
-        </Grid>
-      </CardContent>
-    </Card>
-  );
+        </CardContent>
+      </Card>
+    );
+  };
 
   const renderResultTabs = () => {
     if (!result) return null;
 
-    const tabLabels = ['MongoDB 쿼리', '데이터 컬럼', '샘플 데이터', '차트'];
+    const tabLabels = ['MongoDB 쿼리', '데이터 컬럼', '샘플 데이터', '차트 분석'];
 
     return (
       <Card>
@@ -494,6 +474,15 @@ const DataAnalyticsDashboard: React.FC = () => {
               <Tooltip title="CSV 다운로드">
                 <IconButton onClick={downloadCSV} color="primary">
                   <Download />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="분석 결과 공유">
+                <IconButton
+                  onClick={shareAnalysis}
+                  color="secondary"
+                  disabled={isSharing}
+                >
+                  {isSharing ? <CircularProgress size={20} /> : <Share />}
                 </IconButton>
               </Tooltip>
               <Tooltip title="새로고침">
@@ -538,7 +527,6 @@ const DataAnalyticsDashboard: React.FC = () => {
                     key={index}
                     label={column}
                     variant="outlined"
-                    icon={<FilterList />}
                   />
                 ))}
               </Box>
@@ -582,26 +570,14 @@ const DataAnalyticsDashboard: React.FC = () => {
             </Box>
           )}
 
-          {/* 차트 탭 */}
+          {/* 차트 분석 탭 */}
           {activeTab === 3 && (
             <Box>
-              <Typography variant="subtitle1" gutterBottom>
-                데이터 시각화
+              <Typography variant="subtitle1" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                <ShowChart sx={{ mr: 1 }} />
+                데이터 시각화 및 통계 분석
               </Typography>
-              <Alert severity="info" sx={{ mb: 2 }}>
-                {selectedChartType === 'bar' && '막대 차트로 카테고리별 데이터를 비교해보세요'}
-                {selectedChartType === 'line' && '선 차트로 시간 흐름에 따른 변화를 확인해보세요'}
-                {selectedChartType === 'donut' && '도넛 차트로 전체 중 각 부분의 비율을 확인해보세요'}
-              </Alert>
-              <Paper sx={{ p: 3, minHeight: 450 }}>
-                <Typography variant="h6" gutterBottom>
-                  {chartOptions.title || `${selectedChartType} 차트`}
-                </Typography>
-                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-                  X축: {chartOptions.xField || '미설정'} | Y축: {chartOptions.yField || '미설정'}
-                </Typography>
-                {renderChart()}
-              </Paper>
+              {renderChart()}
             </Box>
           )}
         </CardContent>
@@ -718,7 +694,7 @@ const DataAnalyticsDashboard: React.FC = () => {
           </Card>
 
           {/* 차트 설정 */}
-          {result && renderChartTypeSelector()}
+          {result && renderChartSettings()}
 
           {/* 결과 */}
           {result && renderResultTabs()}

@@ -87,6 +87,11 @@ const MyPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // 제목에서 "데이터 분석:" 접두사 제거하는 함수
+  const cleanTitle = (title: string) => {
+    return title.replace(/^데이터\s*분석\s*:\s*/i, '').trim();
+  };
+
   useEffect(() => {
     loadAnalyses();
     
@@ -354,6 +359,7 @@ const MyPage: React.FC = () => {
               analyses={filteredAnalyses}
               onView={handleViewAnalysis}
               onMenuOpen={handleMenuOpen}
+              cleanTitle={cleanTitle}
             />
           </TabPanel>
 
@@ -362,6 +368,7 @@ const MyPage: React.FC = () => {
               analyses={filteredAnalyses}
               onView={handleViewAnalysis}
               onMenuOpen={handleMenuOpen}
+              cleanTitle={cleanTitle}
             />
           </TabPanel>
 
@@ -370,6 +377,7 @@ const MyPage: React.FC = () => {
               analyses={filteredAnalyses}
               onView={handleViewAnalysis}
               onMenuOpen={handleMenuOpen}
+              cleanTitle={cleanTitle}
             />
           </TabPanel>
         </CardContent>
@@ -416,7 +424,7 @@ const MyPage: React.FC = () => {
           <DialogContentText id="delete-dialog-description">
             {selectedAnalysis && (
               <>
-                <strong>{selectedAnalysis.title || selectedAnalysis.query.substring(0, 50) + (selectedAnalysis.query.length > 50 ? '...' : '')}</strong> 분석을 정말 삭제하시겠습니까?
+                <strong>{cleanTitle(selectedAnalysis.title || selectedAnalysis.query.substring(0, 50) + (selectedAnalysis.query.length > 50 ? '...' : ''))}</strong> 분석을 정말 삭제하시겠습니까?
                 <br /><br />
                 <strong>이 작업은 되돌릴 수 없습니다.</strong>
               </>
@@ -452,9 +460,10 @@ interface AnalysisListProps {
   analyses: Analysis[];
   onView: (analysis: Analysis) => void;
   onMenuOpen: (event: React.MouseEvent<HTMLElement>, analysis: Analysis) => void;
+  cleanTitle: (title: string) => string;
 }
 
-const AnalysisList: React.FC<AnalysisListProps> = ({ analyses, onView, onMenuOpen }) => {
+const AnalysisList: React.FC<AnalysisListProps> = ({ analyses, onView, onMenuOpen, cleanTitle }) => {
   if (analyses.length === 0) {
     return (
       <Box sx={{ textAlign: 'center', py: 4 }}>
@@ -493,7 +502,7 @@ const AnalysisList: React.FC<AnalysisListProps> = ({ analyses, onView, onMenuOpe
           <ListItemText
             primary={
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                {analysis.title || analysis.query}
+                {cleanTitle(analysis.title || analysis.query)}
                 {analysis.isPublic && <Share fontSize="small" color="primary" />}
               </Box>
             }

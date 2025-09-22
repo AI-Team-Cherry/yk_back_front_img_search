@@ -25,9 +25,9 @@ import {
 import axios from "axios";
 import { useAuth } from "../contexts/AuthContext";
 
-const API_BASE = (
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:8080"
-).replace(/\/+$/, "");
+
+const API_BASE = (process.env.REACT_APP_API_BASE_URL || "http://localhost:8080").replace(/\/+$/,"");
+
 
 const departments = [
   { code: "MD", name: "마케팅", icon: <CampaignIcon />, color: "#2196F3" },

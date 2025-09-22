@@ -84,6 +84,10 @@ const FashionModelingPage: React.FC = () => {
   const [result, setResult] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [apiUrl, setApiUrl] = useState<string>(() => {
+    // 환경 변수에서 API URL을 읽거나, 현재 호스트를 기반으로 동적으로 설정
+    return process.env.REACT_APP_API_BASE_URL || window.location.origin;
+  });
 
   const handleModelImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -176,7 +180,21 @@ const FashionModelingPage: React.FC = () => {
       }
 
       const resultData = await response.json();
+      console.log('API 응답 전체:', resultData);
+      console.log('API 응답 image_url:', resultData.image_url);
+      console.log('API 응답 result_url:', resultData.result_url);
       setResult(resultData);
+
+      // 응답에서 이미지 URL 추출
+      const imageUrl = await extractImageFromResponse(resultData);
+      if (imageUrl) {
+        console.log('최종 이미지 URL:', imageUrl);
+        // 결과 이미지 URL을 result 객체에 추가
+        setResult({ ...resultData, processedImageUrl: imageUrl });
+      } else {
+        console.warn('생성된 이미지를 찾을 수 없습니다. API 응답:', resultData);
+      }
+
       setProgress(100);
 
     } catch (error: any) {
@@ -199,6 +217,111 @@ const FashionModelingPage: React.FC = () => {
 
   const getUploadedClothingCount = () => {
     return clothingImages.filter(img => img !== null).length;
+  };
+
+  // JSON 응답에서 실제 이미지 URL/데이터 추출하는 함수
+  const extractImageFromResponse = async (response: any): Promise<string | null> => {
+    try {
+      // image_url을 우선적으로 사용 (JPG 파일), result_url은 JSON 파일일 가능성 높음
+      const directUrl = response.image_url;
+
+      // JSON 파일인 경우 fetch해서 내용 확인
+      if (directUrl && directUrl.endsWith('.json')) {
+        console.log('JSON 파일 감지, 내용을 가져옵니다:', directUrl);
+
+        const jsonResponse = await fetch(apiUrl + directUrl);
+        if (!jsonResponse.ok) {
+          throw new Error(`JSON 파일 로드 실패: ${jsonResponse.status}`);
+        }
+
+        const meta: any = await jsonResponse.json();
+        console.log('JSON 메타데이터:', meta);
+
+        // URL 형태의 이미지 경로 찾기
+        const urlCandidate =
+          meta.image_url ||
+          meta.imageUrl ||
+          meta.image_path ||
+          meta.imagePath ||
+          meta.outputs?.[0]?.image_url;
+
+        if (urlCandidate) {
+          // 상대 경로인 경우 절대 경로로 변환
+          if (urlCandidate.startsWith('/')) {
+            return apiUrl + urlCandidate;
+          }
+          return urlCandidate;
+        }
+
+        // base64 데이터가 있는 경우 data URL로 변환
+        const base64Data =
+          meta.base64 ||
+          meta.data ||
+          meta.outputs?.[0]?.base64;
+
+        const mimeType =
+          meta.mime_type ||
+          meta.mimeType ||
+          meta.outputs?.[0]?.mime_type ||
+          meta.outputs?.[0]?.mimeType ||
+          'image/png';
+
+        if (base64Data) {
+          console.log('Base64 데이터를 이미지로 변환합니다');
+          return `data:${mimeType};base64,${base64Data}`;
+        }
+
+        console.warn('JSON 메타데이터에서 이미지를 찾을 수 없습니다');
+        return null;
+      }
+
+      // 이미지 확장자인 경우 그대로 반환
+      if (directUrl && /\.(png|jpe?g|webp|gif)$/i.test(directUrl)) {
+        // 상대 경로인 경우 절대 경로로 변환
+        if (directUrl.startsWith('/')) {
+          return apiUrl + directUrl;
+        }
+        return directUrl;
+      }
+
+      // image_url이 없거나 이미지가 아닌 경우, result_url도 확인
+      const fallbackUrl = response.result_url;
+      if (fallbackUrl && fallbackUrl.endsWith('.json')) {
+        console.log('fallback으로 JSON 파일 처리:', fallbackUrl);
+
+        const jsonResponse = await fetch(apiUrl + fallbackUrl);
+        if (!jsonResponse.ok) {
+          throw new Error(`Fallback JSON 파일 로드 실패: ${jsonResponse.status}`);
+        }
+
+        const meta: any = await jsonResponse.json();
+        console.log('Fallback JSON 메타데이터:', meta);
+
+        // JSON에서 이미지 URL이나 base64 찾기
+        const imageFromJson =
+          meta.image_url ||
+          meta.imageUrl ||
+          meta.image_path ||
+          meta.imagePath;
+
+        if (imageFromJson) {
+          if (imageFromJson.startsWith('/')) {
+            return apiUrl + imageFromJson;
+          }
+          return imageFromJson;
+        }
+
+        if (meta.base64) {
+          const mimeType = meta.mime_type || meta.mimeType || 'image/png';
+          return `data:${mimeType};base64,${meta.base64}`;
+        }
+      }
+
+      return null;
+    } catch (error) {
+      console.error('이미지 추출 중 오류:', error);
+      return null;
+    }
   };
 
   return (
@@ -428,10 +551,10 @@ const FashionModelingPage: React.FC = () => {
                         </Typography>
 
                         {/* 생성된 이미지 표시 */}
-                        {result.image_url ? (
+                        {result.processedImageUrl ? (
                           <Box sx={{ mb: 3, textAlign: 'center' }}>
                             <img
-                              src={result.image_url}
+                              src={result.processedImageUrl}
                               alt="합성된 패션 이미지"
                               style={{
                                 maxWidth: '100%',
@@ -439,12 +562,16 @@ const FashionModelingPage: React.FC = () => {
                                 borderRadius: 8,
                                 boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
                               }}
+                              onError={(e) => {
+                                console.error('이미지 로드 실패:', result.processedImageUrl);
+                                setError('생성된 이미지를 불러올 수 없습니다.');
+                              }}
                             />
                             <Box sx={{ mt: 2 }}>
                               <Button
                                 variant="contained"
                                 startIcon={<Download />}
-                                href={result.image_url}
+                                href={result.processedImageUrl}
                                 download="fashion_composition.jpg"
                                 target="_blank"
                               >
@@ -511,6 +638,16 @@ const FashionModelingPage: React.FC = () => {
                           <Typography variant="body2">
                             <strong>상태:</strong> {result.message}
                           </Typography>
+                          {result.type && (
+                            <Typography variant="body2" sx={{ mt: 1 }}>
+                              <strong>처리 타입:</strong> {result.type}
+                            </Typography>
+                          )}
+                          {process.env.NODE_ENV === 'development' && (
+                            <Typography variant="body2" sx={{ mt: 1, fontSize: '0.75rem', color: 'text.secondary' }}>
+                              <strong>디버그:</strong> image_url={result.image_url ? '있음' : '없음'}, result_url={result.result_url ? '있음' : '없음'}
+                            </Typography>
+                          )}
                         </Box>
                       </Paper>
                     </Grid>

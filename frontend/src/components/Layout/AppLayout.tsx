@@ -48,7 +48,7 @@ interface MenuItemType {
 const menuItems: MenuItemType[] = [
   { text: "대시보드", icon: <Dashboard />, path: "/dashboard" },
   { text: "데이터 분석", icon: <Psychology />, path: "/analysis" },
-  { text: "공유 분석", icon: <Share />, path: "/shared" },
+  { text: "공유 데이터", icon: <Share />, path: "/shared" },
   { text: "이미지 검색", icon: <ImageSearch />, path: "/image-search" },
   { text: "AI 패션 모델링", icon: <AutoAwesome />, path: "/fashion-modeling" },
   { text: "부서 워크 보드", icon: <Forum />, path: "/boards/MD" },
@@ -66,14 +66,14 @@ const AppLayout: React.FC = () => {
 
   // 컴포넌트 마운트 시 사용자 정보 새로고침
   useEffect(() => {
-    console.log('AppLayout - Current user:', user);
+    console.log("AppLayout - Current user:", user);
     if (refreshUser) {
       refreshUser().catch(console.error);
     }
   }, []);
 
   useEffect(() => {
-    console.log('AppLayout - User updated:', user);
+    console.log("AppLayout - User updated:", user);
   }, [user]);
 
   const handleDrawerToggle = () => {
@@ -139,20 +139,20 @@ const AppLayout: React.FC = () => {
           variant="contained"
           onClick={() => setChatbotOpen(true)}
           sx={{
-            bgcolor: '#4caf50',
-            color: 'white',
+            bgcolor: "#4caf50",
+            color: "white",
             borderRadius: 3,
             px: 3,
             py: 1.5,
-            fontSize: '1rem',
-            fontWeight: 'bold',
-            boxShadow: '0 4px 16px rgba(76, 175, 80, 0.4)',
-            '&:hover': {
-              bgcolor: '#45a049',
-              transform: 'translateY(-2px)',
-              boxShadow: '0 6px 20px rgba(76, 175, 80, 0.5)',
+            fontSize: "1rem",
+            fontWeight: "bold",
+            boxShadow: "0 4px 16px rgba(76, 175, 80, 0.4)",
+            "&:hover": {
+              bgcolor: "#45a049",
+              transform: "translateY(-2px)",
+              boxShadow: "0 6px 20px rgba(76, 175, 80, 0.5)",
             },
-            transition: 'all 0.3s ease'
+            transition: "all 0.3s ease",
           }}
           startIcon={<Chat />}
         >
@@ -246,12 +246,19 @@ const AppLayout: React.FC = () => {
         <MenuItem onClick={handleMenuClose}>
           <Avatar />
           <Box>
-            <Typography variant="subtitle2">{user?.name || '이름 없음'}</Typography>
+            <Typography variant="subtitle2">
+              {user?.name || "이름 없음"}
+            </Typography>
             <Typography variant="caption" color="text.secondary">
-              {user?.employeeId || '사번 없음'} • {user?.department || '부서 없음'}
+              {user?.employeeId || "사번 없음"} •{" "}
+              {user?.department || "부서 없음"}
             </Typography>
             {user?.email && (
-              <Typography variant="caption" color="text.secondary" display="block">
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+              >
                 {user.email}
               </Typography>
             )}

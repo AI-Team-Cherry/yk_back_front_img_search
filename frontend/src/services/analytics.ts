@@ -189,20 +189,23 @@ export const getSharedAnalyses = async (
 
         // 호환성 필드들 (분석 데이터에서 추출하거나 기본값)
         originalAnalysisId: item.analysis_id || item.id,
-        sharedAt: new Date(item.created_at),
-        usageCount: item.access_count || 0,
+        sharedAt: new Date(item.shared_at || item.created_at),
+        usageCount: item.usage_count || item.access_count || 0,
         rating: item.rating || 0,
         category: item.category || 'general',
-        query: mappedAnalysis?.query || '',
-        title: mappedAnalysis?.title || '',
-        tags: mappedAnalysis?.tags || [],
+        query: item.query || mappedAnalysis?.query || '',
+        title: item.title || item.query || mappedAnalysis?.title || '데이터 탐색 분석',
+        tags: item.tags || mappedAnalysis?.tags || [],
+
+        // 백엔드에서 직접 오는 결과 데이터
+        result: item.result,
         // sharedBy는 기본 사용자 객체 제공
-        sharedBy: item.shared_by || {
-          id: 'unknown',
-          employeeId: 'unknown',
-          name: 'Unknown User',
-          department: 'Unknown',
-          role: 'user' as const
+        sharedBy: {
+          id: item.shared_by?.id || item.shared_by?.employeeId || 'unknown',
+          employeeId: item.shared_by?.employeeId || 'unknown',
+          name: item.shared_by?.name || 'Unknown User',
+          department: item.shared_by?.department || 'Unknown',
+          role: (item.shared_by?.role || 'user') as 'user' | 'admin'
         }
       };
     };

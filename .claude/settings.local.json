@@ -24,7 +24,16 @@
       "Bash(venvScriptspip install sentence-transformers)",
       "Bash(C:Final_Cherryyk_back_front_img_searchvenvScriptspip.exe install sentence-transformers)",
       "Bash(tasklist)",
-      "Bash(.venvScriptsactivate)"
+      "Bash(.venvScriptsactivate)",
+      "Bash(dir \"C:\\Final_Cherry\\yk_back_front_img_search\\app\\img_search\")",
+      "Bash(dir \"C:\\Final_Cherry\\yk_back_front_img_search\\app\\img_search\\generated_images\")",
+      "mcp__vscode-mcp__create_diff",
+      "Bash(dir)",
+      "Bash(start-backend.bat)",
+      "Bash(cmd:*)",
+      "Bash(uvicorn:*)",
+      "Bash(venv\\Scripts\\activate:*)",
+      "Bash(tasklist:*)"
     ],
     "deny": [],
     "ask": []
