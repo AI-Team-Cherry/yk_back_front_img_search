@@ -37,7 +37,7 @@ import {
   Send,
   Code,
   TableChart,
-  BarChart,
+  BarChart as BarChartIcon,
   ShowChart,
   DonutSmall,
   ExpandMore,
@@ -377,7 +377,7 @@ const DataAnalyticsDashboard: React.FC = () => {
     <Card sx={{ mb: 2 }}>
       <CardContent>
         <Typography variant="h6" gutterBottom sx={{ display: "flex", alignItems: "center" }}>
-          <BarChart sx={{ mr: 1 }} />
+          <BarChartIcon sx={{ mr: 1 }} />
           차트 설정
         </Typography>
 
@@ -392,7 +392,7 @@ const DataAnalyticsDashboard: React.FC = () => {
               >
                 <MenuItem value="bar">
                   <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <BarChart sx={{ mr: 1 }} /> 막대 차트
+                    <BarChartIcon sx={{ mr: 1 }} /> 막대 차트
                   </Box>
                 </MenuItem>
                 <MenuItem value="line">
