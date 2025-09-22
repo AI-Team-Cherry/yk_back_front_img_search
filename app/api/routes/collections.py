@@ -6,7 +6,7 @@ from typing import List
 router = APIRouter()
 
 @router.get("/collections", response_model=List[str])
-async def get_mongodb_collections(current_user=Depends(get_current_user)):
+async def get_mongodb_collections():
     """
     MongoDB에서 사용 가능한 컬렉션 목록을 반환합니다.
     """
@@ -35,7 +35,7 @@ async def get_mongodb_collections(current_user=Depends(get_current_user)):
         raise HTTPException(status_code=500, detail=f"컬렉션 목록을 가져오는데 실패했습니다: {str(e)}")
 
 @router.get("/collections/{collection_name}/info")
-async def get_collection_info(collection_name: str, current_user=Depends(get_current_user)):
+async def get_collection_info(collection_name: str):
     """
     특정 컬렉션의 정보를 반환합니다.
     """

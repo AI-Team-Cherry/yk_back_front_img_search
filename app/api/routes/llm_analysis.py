@@ -11,7 +11,7 @@ router = APIRouter(prefix="/llm-analysis", tags=["LLMAnalysis"])
 # Colab ngrok 주소 (환경변수로 관리)
 COLAB_BASE_URL = os.getenv("COLAB_BASE_URL", "")
 COLAB_LLM_API = f"{COLAB_BASE_URL}/analyze" if COLAB_BASE_URL else ""
-COLAB_QUERY_API = f"{COLAB_BASE_URL}/generate-query" if COLAB_BASE_URL else ""
+COLAB_QUERY_API = f"{COLAB_BASE_URL}/analyze" if COLAB_BASE_URL else ""
 
 # ========================
 # 헬퍼 함수들
@@ -151,15 +151,16 @@ def analyze_v2(payload: dict = Body(...)):
         if query_result.get("status") != "success":
             return JSONResponse({"status": "error", "message": "Query generation failed"}, status_code=500)
 
-        target_collection = query_result.get("target_collection")
-        pipeline = query_result.get("pipeline")
-        mongodb_query_str = query_result.get("mongodb_query_string")
+        # 코랩 응답 형식 처리
+        mongodb_results = query_result.get("mongodb_results", {})
+        target_collection = mongodb_results.get("collection", "unknown")
+        pipeline = mongodb_results.get("pipeline", [])
+        raw_results = mongodb_results.get("data", [])
 
-        print(f"[LLM-V2] 생성된 쿼리: {target_collection} / {len(pipeline)} stages")
+        print(f"[LLM-V2] 코랩에서 받은 데이터: {target_collection} / {len(raw_results)}건")
 
-        # Step 2: 백엔드에서 MongoDB 쿼리 실행
-        raw_results = execute_mongodb_query(target_collection, pipeline)
-        print(f"[LLM-V2] 쿼리 실행 결과: {len(raw_results)}건")
+        # MongoDB 쿼리 문자열 생성 (시각화용)
+        mongodb_query_str = f"db.{target_collection}.aggregate({pipeline})"
 
         # Step 3: Analytics 형식으로 응답 생성
         if format_type == "analytics":
@@ -203,6 +204,18 @@ def analyze_v2(payload: dict = Body(...)):
     except Exception as e:
         print(f"[ERROR] LLM-V2 분석 오류: {str(e)}")
         return JSONResponse({"status": "error", "message": "Internal server error"}, status_code=500)
+
+# ========================
+# 코랩 URL 설정 확인 API
+# ========================
+
+@router.get("/colab-url")
+def get_colab_url():
+    """현재 설정된 코랩 URL 반환"""
+    return {
+        "colab_url": COLAB_BASE_URL,
+        "is_configured": bool(COLAB_BASE_URL)
+    }
 
 # ========================
 # 기존 Colab 프록시 분석 API

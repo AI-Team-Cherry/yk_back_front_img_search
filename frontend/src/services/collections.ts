@@ -34,24 +34,24 @@ export interface CollectionInfo {
 
 // MongoDB 컬렉션 목록 가져오기
 export const getCollections = async (): Promise<string[]> => {
-  await ensureApiConfigured();
   try {
+    await ensureApiConfigured();
     const response = await api.get('/api/collections');
     return response.data;
   } catch (error: any) {
     console.error('컬렉션 목록 가져오기 실패:', error);
-    throw new Error(error.response?.data?.detail || '컬렉션 목록을 가져오는데 실패했습니다.');
+    throw new Error(error.message || '컬렉션 목록을 가져오는데 실패했습니다.');
   }
 };
 
 // 특정 컬렉션 정보 가져오기
 export const getCollectionInfo = async (collectionName: string): Promise<CollectionInfo> => {
-  await ensureApiConfigured();
   try {
+    await ensureApiConfigured();
     const response = await api.get(`/api/collections/${collectionName}/info`);
     return response.data;
   } catch (error: any) {
     console.error('컬렉션 정보 가져오기 실패:', error);
-    throw new Error(error.response?.data?.detail || '컬렉션 정보를 가져오는데 실패했습니다.');
+    throw new Error(error.message || '컬렉션 정보를 가져오는데 실패했습니다.');
   }
 };

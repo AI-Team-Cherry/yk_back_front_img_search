@@ -49,6 +49,22 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "../contexts/AuthContext";
 import CollectionSelector from "../components/Collections/CollectionSelector";
+import { apiConfig } from "../utils/apiConfig";
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip as RechartsTooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
 
 // 차트 타입 정의
 type ChartType = 'bar' | 'line' | 'donut';
@@ -130,20 +146,20 @@ const DataAnalyticsDashboard: React.FC = () => {
     }, 200);
 
     try {
-      const token = localStorage.getItem("token");
+      // 동적으로 백엔드 URL 가져오기
+      const backendUrl = await apiConfig.detectAvailableServer();
 
       const response = await fetch(
-        `${process.env.REACT_APP_API_URL || "http://localhost:8001"}/llm-analysis/analyze-v2`,
+        `${backendUrl}/llm-analysis/analyze`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            "Authorization": `Bearer ${localStorage.getItem("token")}`,
           },
           body: JSON.stringify({
             query: query.trim(),
-            collections: selectedCollections,
-            format: "analytics" // 새로운 포맷 지정
+            collections: selectedCollections
           }),
         }
       );
@@ -153,19 +169,67 @@ const DataAnalyticsDashboard: React.FC = () => {
       }
 
       const data = await response.json();
-      console.log("📊 [Analytics Response]", data);
+      console.log("📊 [Colab Response]", data);
 
-      setResult(data);
+      // 코랩 응답을 프론트엔드 형식으로 변환
+      const mongoResults = data.mongodb_results || {};
+
+      // 차트에 적합한 필드 자동 감지
+      const detectChartFields = (dataArray: any[]) => {
+        if (!dataArray || dataArray.length === 0) return { x_field: '', y_field: '' };
+
+        const sample = dataArray[0];
+        const numericFields = [];
+        const textFields = [];
+
+        for (const [key, value] of Object.entries(sample)) {
+          if (key === '_id') continue;
+          if (typeof value === 'number') {
+            numericFields.push(key);
+          } else if (typeof value === 'string') {
+            textFields.push(key);
+          }
+        }
+
+        // 좋아요, 평점, 가격 등을 우선순위로 Y축 설정
+        const priorityYFields = ['hearts', 'rating_avg', 'price', 'sales_cum', 'views_1m', 'reviews_count'];
+        let yField = numericFields.find(field => priorityYFields.includes(field)) || numericFields[0] || 'value';
+
+        // 이름, 브랜드 등을 우선순위로 X축 설정
+        const priorityXFields = ['name', 'brand', 'category_l1', 'title'];
+        let xField = textFields.find(field => priorityXFields.includes(field)) || textFields[0] || 'name';
+
+        return { x_field: xField, y_field: yField };
+      };
+
+      const chartFields = detectChartFields(mongoResults.data);
+
+      const analyticsData = {
+        query: data.query,
+        mongodb_query: `db.${mongoResults.collection}.aggregate(${JSON.stringify(mongoResults.pipeline, null, 2)})`,
+        columns: mongoResults.data?.length > 0 ? Object.keys(mongoResults.data[0]) : [],
+        sample_data: mongoResults.data || [],
+        csv_data: convertToCsv(mongoResults.data || []),
+        total_count: mongoResults.data?.length || 0,
+        chart_suggestion: {
+          type: 'bar' as ChartType,
+          x_field: chartFields.x_field,
+          y_field: chartFields.y_field,
+          title: `${data.query} 분석 결과`
+        }
+      };
+
+      setResult(analyticsData);
       setProgress(100);
 
       // 차트 옵션 자동 설정
-      if (data.chart_suggestion) {
-        setSelectedChartType(data.chart_suggestion.type);
+      if (analyticsData.chart_suggestion) {
+        setSelectedChartType(analyticsData.chart_suggestion.type);
         setChartOptions(prev => ({
           ...prev,
-          title: data.chart_suggestion.title,
-          xField: data.chart_suggestion.x_field,
-          yField: data.chart_suggestion.y_field,
+          title: analyticsData.chart_suggestion.title,
+          xField: analyticsData.chart_suggestion.x_field,
+          yField: analyticsData.chart_suggestion.y_field,
         }));
       }
 
@@ -178,6 +242,25 @@ const DataAnalyticsDashboard: React.FC = () => {
       clearInterval(progressInterval);
       setIsLoading(false);
     }
+  };
+
+  const convertToCsv = (data: any[]) => {
+    if (!data || data.length === 0) return '';
+
+    const headers = Object.keys(data[0]);
+    const csvHeaders = headers.join(',');
+    const csvRows = data.map(row =>
+      headers.map(header => {
+        const value = row[header];
+        if (value === null || value === undefined) return '';
+        if (typeof value === 'string' && value.includes(',')) {
+          return `"${value.replace(/"/g, '""')}"`;
+        }
+        return value;
+      }).join(',')
+    );
+
+    return [csvHeaders, ...csvRows].join('\n');
   };
 
   const handleSuggestedQuery = (suggestedQuery: string) => {
@@ -196,6 +279,98 @@ const DataAnalyticsDashboard: React.FC = () => {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  // 차트 데이터 전처리
+  const prepareChartData = () => {
+    if (!result?.sample_data || result.sample_data.length === 0) return [];
+
+    return result.sample_data.map((item, index) => ({
+      ...item,
+      index: index + 1,
+      name: item[chartOptions.xField] || item.name || `Item ${index + 1}`,
+      value: item[chartOptions.yField] || item.value || 0
+    }));
+  };
+
+  // 도넛 차트용 색상 팔레트
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF7C7C'];
+
+  // 차트 렌더링
+  const renderChart = () => {
+    const chartData = prepareChartData();
+
+    if (chartData.length === 0) {
+      return (
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
+          <Typography variant="h6" color="textSecondary">
+            차트를 표시할 데이터가 없습니다
+          </Typography>
+        </Box>
+      );
+    }
+
+    switch (selectedChartType) {
+      case 'bar':
+        return (
+          <ResponsiveContainer width="100%" height={400}>
+            <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              {chartOptions.showGrid && <CartesianGrid strokeDasharray="3 3" />}
+              <XAxis dataKey="name" />
+              <YAxis />
+              <RechartsTooltip />
+              {chartOptions.showLegend && <Legend />}
+              <Bar dataKey="value" fill="#8884d8" />
+            </BarChart>
+          </ResponsiveContainer>
+        );
+
+      case 'line':
+        return (
+          <ResponsiveContainer width="100%" height={400}>
+            <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              {chartOptions.showGrid && <CartesianGrid strokeDasharray="3 3" />}
+              <XAxis dataKey="name" />
+              <YAxis />
+              <RechartsTooltip />
+              {chartOptions.showLegend && <Legend />}
+              <Line type="monotone" dataKey="value" stroke="#8884d8" strokeWidth={2} />
+            </LineChart>
+          </ResponsiveContainer>
+        );
+
+      case 'donut':
+        return (
+          <ResponsiveContainer width="100%" height={400}>
+            <PieChart>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                innerRadius={60}
+                outerRadius={120}
+                paddingAngle={5}
+                dataKey="value"
+              >
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <RechartsTooltip />
+              {chartOptions.showLegend && <Legend />}
+            </PieChart>
+          </ResponsiveContainer>
+        );
+
+      default:
+        return (
+          <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
+            <Typography variant="h6" color="textSecondary">
+              지원되지 않는 차트 타입입니다
+            </Typography>
+          </Box>
+        );
+    }
   };
 
   const renderChartTypeSelector = () => (
@@ -418,17 +593,14 @@ const DataAnalyticsDashboard: React.FC = () => {
                 {selectedChartType === 'line' && '선 차트로 시간 흐름에 따른 변화를 확인해보세요'}
                 {selectedChartType === 'donut' && '도넛 차트로 전체 중 각 부분의 비율을 확인해보세요'}
               </Alert>
-              <Paper sx={{ p: 3, textAlign: 'center', minHeight: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Typography variant="h6" color="textSecondary">
-                  📊 {chartOptions.title || '차트가 여기에 표시됩니다'}
-                  <br />
-                  <Typography variant="body2" sx={{ mt: 1 }}>
-                    X축: {chartOptions.xField || '미설정'} | Y축: {chartOptions.yField || '미설정'}
-                  </Typography>
-                  <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                    실제 차트 라이브러리(Chart.js, Recharts 등)로 구현 예정
-                  </Typography>
+              <Paper sx={{ p: 3, minHeight: 450 }}>
+                <Typography variant="h6" gutterBottom>
+                  {chartOptions.title || `${selectedChartType} 차트`}
                 </Typography>
+                <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+                  X축: {chartOptions.xField || '미설정'} | Y축: {chartOptions.yField || '미설정'}
+                </Typography>
+                {renderChart()}
               </Paper>
             </Box>
           )}
