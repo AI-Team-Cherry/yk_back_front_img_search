@@ -76,4 +76,9 @@ coverage.xml
 .ipynb_checkpoints
 
 # Data
-img_search/
+# 이미지 및 생성된 결과물
+*generated_images/
+*only_product_images/
+
+# # 모델 결과나 체크포인트 폴더
+# img_search/cloth_segmentation/checkpoints/

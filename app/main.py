@@ -3,6 +3,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import auth, ingest, query, result, debug, analytics, report_generator, visualization, integrated_system, images , llm_analysis, boards, llm_board_chat, collections
 from app.services.ai_model_service import ai_model_service
+from app.api.routes.images import router as images_router
+from app.services.embedding_index import init_indices
 
 # Load environment variables
 load_dotenv()
@@ -37,6 +39,7 @@ app.include_router(llm_analysis.router)
 app.include_router(boards.router)
 app.include_router(llm_board_chat.router)
 app.include_router(collections.router, prefix="/api", tags=["Collections"])
+app.include_router(images_router, prefix="/api/images", tags=["Images"])
 
 # Health check 엔드포인트
 @app.get("/health")
