@@ -161,91 +161,15 @@ class ImageProcessor:
         print(f"분리된 이미지 크기: {masked.shape}")
         return masked
     
-    def create_separated_images(self, image: Image.Image, clothing_regions: dict, clothing_type: str) -> List[Dict[str, Any]]:
-        """분리된 사진을 생성하고 저장하는 메서드"""
-        separated_images = []
-        
-        try:
-            # 분리된 이미지 저장 디렉토리 생성
-            separated_dir = "app/img_search/separated_images"
-            os.makedirs(separated_dir, exist_ok=True)
-            
-            # 타임스탬프로 고유한 파일명 생성
-            timestamp = int(time.time() * 1000)
-            
-            if clothing_type == "all":
-                # 전체 옵션: 상의 + 하의 분리 사진 (2장)
-                
-                # 상의 분리 사진
-                top_region = self.crop_clothes_region_by_mask(image, clothing_regions['top'])
-                top_image = Image.fromarray(top_region)
-                top_filename = f"top_{timestamp}.jpg"
-                top_path = os.path.join(separated_dir, top_filename)
-                top_image.save(top_path, "JPEG", quality=95)
-                
-                separated_images.append({
-                    "type": "상의",
-                    "filename": top_filename,
-                    "url": f"/api/images/separated/{top_filename}",
-                    "description": "상의 영역 분리된 이미지"
-                })
-                
-                # 하의 분리 사진
-                bottom_region = self.crop_clothes_region_by_mask(image, clothing_regions['bottom'])
-                bottom_image = Image.fromarray(bottom_region)
-                bottom_filename = f"bottom_{timestamp}.jpg"
-                bottom_path = os.path.join(separated_dir, bottom_filename)
-                bottom_image.save(bottom_path, "JPEG", quality=95)
-                
-                separated_images.append({
-                    "type": "하의",
-                    "filename": bottom_filename,
-                    "url": f"/api/images/separated/{bottom_filename}",
-                    "description": "하의 영역 분리된 이미지"
-                })
-                
-            elif clothing_type == "top":
-                # 상의 옵션: 상의 분리 사진 (1장)
-                top_region = self.crop_clothes_region_by_mask(image, clothing_regions['top'])
-                top_image = Image.fromarray(top_region)
-                top_filename = f"top_{timestamp}.jpg"
-                top_path = os.path.join(separated_dir, top_filename)
-                top_image.save(top_path, "JPEG", quality=95)
-                
-                separated_images.append({
-                    "type": "상의",
-                    "filename": top_filename,
-                    "url": f"/api/images/separated/{top_filename}",
-                    "description": "상의 영역 분리된 이미지"
-                })
-                
-            elif clothing_type == "bottom":
-                # 하의 옵션: 하의 분리 사진 (1장)
-                bottom_region = self.crop_clothes_region_by_mask(image, clothing_regions['bottom'])
-                bottom_image = Image.fromarray(bottom_region)
-                bottom_filename = f"bottom_{timestamp}.jpg"
-                bottom_path = os.path.join(separated_dir, bottom_filename)
-                bottom_image.save(bottom_path, "JPEG", quality=95)
-                
-                separated_images.append({
-                    "type": "하의",
-                    "filename": bottom_filename,
-                    "url": f"/api/images/separated/{bottom_filename}",
-                    "description": "하의 영역 분리된 이미지"
-                })
-            
-            print(f"분리된 이미지 생성 완료: {len(separated_images)}개")
-            
-        except Exception as e:
-            print(f"분리된 이미지 생성 실패: {e}")
-        
-        return separated_images
     
     def _create_separated_images(self, image: Image.Image, clothing_regions: dict, clothing_type: str) -> List[Dict[str, Any]]:
         """분리된 사진을 생성하고 저장하는 메서드"""
         separated_images = []
         
         try:
+            print(f"분리된 이미지 생성 시작 - 의류 타입: {clothing_type}")
+            print(f"clothing_regions 키: {list(clothing_regions.keys())}")
+            
             # 분리된 이미지 저장 디렉토리 생성
             separated_dir = "app/img_search/separated_images"
             os.makedirs(separated_dir, exist_ok=True)

@@ -285,7 +285,7 @@ class EnhancedImageSearchService:
             # 1. 의류 영역 추출
             clothing_region = self.image_processor.crop_clothes_region_by_mask(image, clothing_mask)
             clothing_image = Image.fromarray(clothing_region)
-            print(f"{region_name} 영역 추출 완료")
+            print(f"{region_name} 영역 추출 완료 - 마스크 픽셀 수: {clothing_mask.sum()}")
             
             # 2. 카테고리 분류
             category_results = predict_clothing_category(clothing_image, topk=2)
@@ -296,10 +296,12 @@ class EnhancedImageSearchService:
             # 3. 의류 영역으로 CLIP 검색
             processed_image = self.image_processor.preprocess_image(clothing_image)
             image_embedding = self.image_processor.get_image_embedding(processed_image)
+            print(f"{region_name} CLIP 임베딩 생성 완료 - 임베딩 크기: {image_embedding.shape}")
             
             # 4. FAISS 검색
             search_k = min(top_k * 5, self.index.ntotal)
             D, I = self.index.search(image_embedding, k=search_k)
+            print(f"{region_name} FAISS 검색 완료 - 상위 {len(I[0])}개 후보")
             
             # 5. 결과 생성
             unique_results = []
