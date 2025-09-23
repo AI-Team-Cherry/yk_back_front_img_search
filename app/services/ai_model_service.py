@@ -10,7 +10,7 @@ class AIModelService:
         self.tokenizers = {}
 
     def load_models(self):
-        model_name = "gpt2"   # ✅ 원래 yunki_master.zip 에 있던 기본 모델
+        model_name = "gpt2"   #  원래 yunki_master.zip 에 있던 기본 모델
         tok = GPT2Tokenizer.from_pretrained(model_name)
         model = GPT2LMHeadModel.from_pretrained(model_name)
 
@@ -30,7 +30,7 @@ class AIModelService:
         pipe = self.models["qa_generator"]
         tok = self.tokenizers["qa_generator"]
 
-        # ✅ 토큰 길이 제한
+        #  토큰 길이 제한
         tokens = tok.encode(prompt, truncation=True, max_length=900)
         prompt_truncated = tok.decode(tokens, skip_special_tokens=True)
 

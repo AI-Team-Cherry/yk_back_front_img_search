@@ -17,8 +17,15 @@ class ClothingCategoryModel:
             self.processor = CLIPProcessor.from_pretrained(self.model_name)
             self.model = CLIPModel.from_pretrained(self.model_name).to(self.device).eval()
             
-            # 의류 카테고리 정의
-            self.categories = ["Top", "Bottom", "Dress", "Outerwear", "Accessories"]
+            # 의류 카테고리 정의 (더 구체적이고 한국어 의류에 특화)
+            self.categories = [
+                "T-shirt", "Shirt", "Blouse", "Sweater", "Hoodie", "Jacket", "Coat",  # 상의
+                "Jeans", "Pants", "Shorts", "Skirt", "Trousers",  # 하의
+                "Dress", "Jumpsuit",  # 원피스류
+                "Shoes", "Sneakers", "Boots", "Sandals",  # 신발
+                "Bag", "Backpack", "Handbag",  # 가방
+                "Hat", "Cap", "Beanie"  # 모자
+            ]
             
             print(f"CLIP 카테고리 분류 모델 로드 완료: {self.model_name}")
             
@@ -67,14 +74,29 @@ class ClothingCategoryModel:
             return [{"label": "Unknown", "score": 0.0}] * min(topk, len(self.categories))
     
     def is_top_or_bottom(self, img: Image.Image) -> str:
-        """상의/하의 간단 구분"""
-        results = self.predict_clothing_category(img, topk=1)
+        """상의/하의 간단 구분 (개선된 카테고리 매핑)"""
+        results = self.predict_clothing_category(img, topk=3)  # 더 많은 후보 확인
+        
         if results:
-            category = results[0]["label"]
-            if category in ["Top", "Outerwear"]:
-                return "top"
-            elif category in ["Bottom", "Dress"]:
-                return "bottom"
+            # 상의 카테고리들
+            top_categories = ["T-shirt", "Shirt", "Blouse", "Sweater", "Hoodie", "Jacket", "Coat"]
+            # 하의 카테고리들  
+            bottom_categories = ["Jeans", "Pants", "Shorts", "Skirt", "Trousers"]
+            # 원피스류
+            dress_categories = ["Dress", "Jumpsuit"]
+            
+            # 상위 3개 결과에서 가장 높은 점수의 카테고리 확인
+            for result in results:
+                category = result["label"]
+                score = result["score"]
+                
+                if category in top_categories and score > 0.15:  # 임계값을 낮춤 (0.2 → 0.15)
+                    return "top"
+                elif category in bottom_categories and score > 0.15:
+                    return "bottom"
+                elif category in dress_categories and score > 0.15:
+                    return "dress"  # 원피스는 별도 처리
+                    
         return "unknown"
 
 # 전역 인스턴스

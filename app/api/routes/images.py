@@ -6,7 +6,7 @@ from pathlib import Path
 import os
 import io
 
-from app.services.image_gen import generate_image, EnhancedImageSearchService, get_search_service
+from app.services.image_search import generate_image, EnhancedImageSearchService, get_search_service
 from app.services.gemini_service import gemini_service
 from app.utils.translate import translate_fashion_query_ko2en  # 한국어 쿼리 번역 유틸
 
@@ -64,7 +64,7 @@ async def list_images(
 
         # AI 검색 사용 (실제 유사도 점수 기반)
         if query_used:
-            from app.services.image_gen import generate_image
+            from app.services.image_search import generate_image
             result = await generate_image(query_used, limit)
             images = result.get("images", [])
             
@@ -295,7 +295,12 @@ async def search_images_by_file_advanced(
         
         # 실제 고급 이미지 검색 수행 (상의/하의 구분)
         service = get_search_service()
-        search_results = service.search_by_image_advanced(image, limit, clothing_type)
+        search_response = service.search_by_image_advanced(image, limit, clothing_type)
+        
+        # 새로운 응답 구조로 변환
+        search_results = search_response.get("results", [])
+        separated_images = search_response.get("separated_images", [])
+        search_type = search_response.get("search_type", clothing_type)
         
         # 텍스트 검색과 동일한 응답 구조로 변환
         formatted_images = []
@@ -324,7 +329,11 @@ async def search_images_by_file_advanced(
             "query": f"고급 이미지 검색: {file.filename}",
             "totalCount": len(formatted_images),
             "searchTime": 0.0,
-            "images": formatted_images
+            "images": formatted_images,
+            # 분리된 이미지 정보 추가
+            "separated_images": separated_images,
+            "search_type": search_type,
+            "advanced_search": True
         }
         
     except HTTPException:
@@ -510,6 +519,33 @@ async def get_generated_image(filename: str):
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"이미지 로드 실패: {str(e)}")
+
+@router.get("/separated/{filename}")
+async def get_separated_image(filename: str):
+    """분리된 이미지 파일 반환"""
+    try:
+        # 분리된 이미지 디렉토리
+        separated_dir = Path(__file__).parent.parent.parent / "img_search" / "separated_images"
+
+        if ".." in filename or "/" in filename:
+            raise HTTPException(status_code=400, detail="Invalid filename")
+
+        file_path = separated_dir / filename
+        if not file_path.exists() or not file_path.is_file():
+            raise HTTPException(status_code=404, detail="Separated image not found")
+
+        return FileResponse(
+            path=str(file_path),
+            media_type="image/jpeg",
+            headers={
+                "Cache-Control": "public, max-age=3600",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET",
+                "Access-Control-Allow-Headers": "*",
+            },
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"분리된 이미지 로드 실패: {str(e)}")
 
 
 @router.post("/generate-fashion")

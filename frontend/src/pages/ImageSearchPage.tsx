@@ -93,6 +93,7 @@ const ImageSearchPage: React.FC = () => {
   const [isAdvancedSearch, setIsAdvancedSearch] = useState(false);
   const [clothingType, setClothingType] = useState<'all' | 'top' | 'bottom'>('all');
   const [modalImage, setModalImage] = useState<ImageResult | null>(null);
+  const [separatedImages, setSeparatedImages] = useState<any[]>([]);
 
   // 추천 검색어 예시
   const suggestedQueries = [
@@ -186,6 +187,7 @@ const ImageSearchPage: React.FC = () => {
       }
 
       setResult(searchResult);
+      setSeparatedImages(searchResult.separated_images || []);
       setProgress(100);
       setHasSearched(true);
     } catch (error: any) {
@@ -541,6 +543,60 @@ const ImageSearchPage: React.FC = () => {
             </Alert>
           )}
 
+          {/* 분리된 이미지 표시 (고급 검색 결과) */}
+          {separatedImages.length > 0 && (
+            <Fade in={true}>
+              <Card sx={{ mb: 3 }}>
+                <CardContent>
+                  <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                    <AutoAwesome sx={{ mr: 1 }} />
+                    분리된 의류 영역
+                  </Typography>
+                  <Grid container spacing={2}>
+                    {separatedImages.map((separatedImg, index) => (
+                      <Grid item xs={12} sm={6} md={4} key={index}>
+                        <Card variant="outlined">
+                          <Box sx={{ position: 'relative' }}>
+                            <img
+                              src={`http://localhost:8001${separatedImg.url}`}
+                              alt={separatedImg.description}
+                              style={{
+                                width: '100%',
+                                height: '200px',
+                                objectFit: 'cover',
+                                borderRadius: '4px 4px 0 0'
+                              }}
+                            />
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                top: 8,
+                                right: 8,
+                                bgcolor: 'rgba(0,0,0,0.7)',
+                                color: 'white',
+                                px: 1,
+                                py: 0.5,
+                                borderRadius: 1,
+                                fontSize: '0.75rem'
+                              }}
+                            >
+                              {separatedImg.type}
+                            </Box>
+                          </Box>
+                          <CardContent sx={{ p: 1.5 }}>
+                            <Typography variant="body2" color="text.secondary">
+                              {separatedImg.description}
+                            </Typography>
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </CardContent>
+              </Card>
+            </Fade>
+          )}
+
           {/* 검색 결과 */}
           {result && hasSearched && (
             <Fade in={true}>
@@ -564,7 +620,7 @@ const ImageSearchPage: React.FC = () => {
                               boxShadow: 2,
                           },
                             height: 'auto',
-                            minHeight: '400px'  // 480px → 400px로 조정 (240px 이미지에 맞춤)
+                            minHeight: 'auto'  // 원본 비율에 맞춰 자동 조정
                         }}
                         onClick={() => handleImageClick(image)}
                       >
@@ -575,8 +631,8 @@ const ImageSearchPage: React.FC = () => {
                           loading="lazy"
                           style={{
                             width: '100%',
-                            height: '240px',  // 320px → 240px로 축소 (원본 320px보다 작게)
-                            objectFit: 'contain',  // contain 유지 (압축 방지)
+                            height: 'auto',  // 원본 비율 유지
+                            objectFit: 'cover',  // 텍스트 검색과 동일하게
                             imageRendering: 'crisp-edges',  // 이미지 렌더링 품질 향상
                             backgroundColor: '#f5f5f5'  // 배경색 추가 (이미지 영역 명확화)
                           }}

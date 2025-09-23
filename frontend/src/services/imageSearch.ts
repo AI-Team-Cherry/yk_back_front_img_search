@@ -43,6 +43,12 @@ export interface SearchResult {
   images: ImageResult[];
   totalCount: number;
   searchTime: number;
+  separated_images?: Array<{
+    type: string;
+    filename: string;
+    url: string;
+    description: string;
+  }>;
 }
 
 // 이미지 검색 API
