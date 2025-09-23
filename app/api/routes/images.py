@@ -1,6 +1,6 @@
 from __future__ import annotations
 from fastapi import APIRouter, HTTPException, Query, UploadFile, File, Form
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from typing import Optional, List
 from pathlib import Path
 import os
@@ -121,18 +121,55 @@ async def list_images(
 
 @router.get("/file/{filename}")
 async def get_image(filename: str):
-    """특정 이미지 파일 반환"""
+    """특정 이미지 파일 반환 (품질 향상)"""
     file_path = _safe_image_path(filename)
-    return FileResponse(
-        path=str(file_path),
-        media_type="image/jpeg",
-        headers={
-            "Cache-Control": "public, max-age=3600",
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET",
-            "Access-Control-Allow-Headers": "*",
-        },
-    )
+    
+    # 이미지 품질 향상을 위한 처리
+    try:
+        from PIL import Image
+        import io
+        
+        # 원본 이미지 로드
+        with Image.open(file_path) as img:
+            # RGB 모드로 변환
+            if img.mode != 'RGB':
+                img = img.convert('RGB')
+            
+            # 이미지 크기가 작으면 업스케일링
+            if img.width < 600 or img.height < 600:
+                # 비율 유지하면서 최소 600px로 업스케일링
+                ratio = max(600 / img.width, 600 / img.height)
+                new_size = (int(img.width * ratio), int(img.height * ratio))
+                img = img.resize(new_size, Image.Resampling.LANCZOS)
+            
+            # 고품질 JPEG로 변환
+            img_byte_arr = io.BytesIO()
+            img.save(img_byte_arr, format='JPEG', quality=95, optimize=True)
+            img_byte_arr.seek(0)
+            
+            return Response(
+                content=img_byte_arr.getvalue(),
+                media_type="image/jpeg",
+                headers={
+                    "Cache-Control": "public, max-age=3600",
+                    "Access-Control-Allow-Origin": "*",
+                    "Access-Control-Allow-Methods": "GET",
+                    "Access-Control-Allow-Headers": "*",
+                },
+            )
+    except Exception as e:
+        print(f"이미지 처리 실패, 원본 반환: {e}")
+        # 처리 실패 시 원본 반환
+        return FileResponse(
+            path=str(file_path),
+            media_type="image/jpeg",
+            headers={
+                "Cache-Control": "public, max-age=3600",
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET",
+                "Access-Control-Allow-Headers": "*",
+            },
+        )
 
 
 @router.get("/download/{filename}")
