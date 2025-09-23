@@ -104,22 +104,32 @@ class HumanSegmentationModel:
                 # 상/하의 구분을 위한 랜드마크 추출
                 landmarks = pose_results.pose_landmarks.landmark
                 
-                # 허리 라인 추정 (엉덩이 랜드마크들 사용)
-                waist_landmarks = [
+                # 허리 라인 추정 (더 정확한 방법)
+                # 1. 엉덩이와 어깨 중간점 사용
+                hip_landmarks = [
                     landmarks[self.mp_pose.PoseLandmark.LEFT_HIP],
                     landmarks[self.mp_pose.PoseLandmark.RIGHT_HIP]
                 ]
+                shoulder_landmarks = [
+                    landmarks[self.mp_pose.PoseLandmark.LEFT_SHOULDER],
+                    landmarks[self.mp_pose.PoseLandmark.RIGHT_SHOULDER]
+                ]
                 
-                # 허리 라인 Y 좌표 계산
-                waist_y = int(np.mean([lm.y * h for lm in waist_landmarks if lm.visibility > 0.5]))
-                print(f"허리 라인 Y 좌표: {waist_y} (이미지 높이: {h})")
+                # 2. 어깨와 엉덩이의 중간점을 허리 라인으로 사용
+                hip_y = np.mean([lm.y * h for lm in hip_landmarks if lm.visibility > 0.5])
+                shoulder_y = np.mean([lm.y * h for lm in shoulder_landmarks if lm.visibility > 0.5])
                 
-                # 상의 마스크 (허리 위쪽)
+                # 3. 어깨와 엉덩이 사이의 60% 지점을 허리 라인으로 설정 (더 정확한 의류 분할)
+                waist_y = int(shoulder_y + (hip_y - shoulder_y) * 0.6)
+                
+                print(f"어깨 Y: {shoulder_y:.1f}, 엉덩이 Y: {hip_y:.1f}, 허리 라인 Y: {waist_y} (이미지 높이: {h})")
+                
+                # 4. 상의 마스크 (허리 위쪽 + 약간의 여유)
                 top_mask = full_body_mask.copy()
                 top_mask[waist_y:, :] = 0
                 print(f"상의 마스크 픽셀 수: {top_mask.sum()}")
                 
-                # 하의 마스크 (허리 아래쪽)
+                # 5. 하의 마스크 (허리 아래쪽 + 약간의 여유)
                 bottom_mask = full_body_mask.copy()
                 bottom_mask[:waist_y, :] = 0
                 print(f"하의 마스크 픽셀 수: {bottom_mask.sum()}")
